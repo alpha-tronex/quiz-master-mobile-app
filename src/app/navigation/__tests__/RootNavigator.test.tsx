@@ -1,15 +1,21 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 import { RootNavigator } from '../RootNavigator';
 import { useAuthStore } from '../../../core/auth/authStore';
 
-const renderRootNavigator = () =>
-    render(
-        <NavigationContainer>
-            <RootNavigator />
-        </NavigationContainer>
+const renderRootNavigator = () => {
+    const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+                <RootNavigator />
+            </NavigationContainer>
+        </QueryClientProvider>
     );
+};
 
 afterEach(() => {
     useAuthStore.setState({ user: null, token: null, isHydrating: true });
@@ -29,7 +35,7 @@ describe('RootNavigator', () => {
 
         await renderRootNavigator();
 
-        expect(screen.getByText('Log in')).toBeTruthy();
+        expect(screen.getByRole('header', { name: 'Log in' })).toBeTruthy();
     });
 
     test('renders the main tabs when a token is present', async () => {

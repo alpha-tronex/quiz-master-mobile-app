@@ -81,3 +81,18 @@ export function validateForm(formData: FormValidationInput): FormValidationResul
         invalidFields
     };
 }
+
+/**
+ * Reshapes a `FormValidationResult`'s parallel `errors`/`invalidFields`
+ * arrays into a `{ fieldName: message }` map, for screens that show one
+ * error per `TextField` rather than a single combined error list.
+ * `errors[i]` always corresponds to `invalidFields[i]` — see the `record()`
+ * helper above, which pushes to both in lockstep.
+ */
+export function fieldErrorMap(result: FormValidationResult): Record<string, string> {
+    const map: Record<string, string> = {};
+    result.invalidFields.forEach((field, i) => {
+        map[field] = result.errors[i];
+    });
+    return map;
+}

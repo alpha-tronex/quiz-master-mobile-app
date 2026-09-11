@@ -1,4 +1,4 @@
-import { validateForm } from '../validateForm';
+import { validateForm, fieldErrorMap } from '../validateForm';
 
 describe('validateForm', () => {
     test('is valid for a fully well-formed registration payload', () => {
@@ -91,5 +91,27 @@ describe('validateForm', () => {
         const result = validateForm({});
 
         expect(result).toEqual({ valid: true, errors: [], invalidFields: [] });
+    });
+});
+
+describe('fieldErrorMap', () => {
+    test('maps each invalid field to its corresponding error message', () => {
+        const result = validateForm({ uname: '', pass: '', email: 'not-an-email' });
+
+        expect(fieldErrorMap(result)).toEqual({
+            uname: 'Username is required',
+            pass: 'Password is required',
+            email: 'Invalid email address'
+        });
+    });
+
+    test('returns an empty object when the form is fully valid', () => {
+        const result = validateForm({ uname: 'quizadmin1', pass: 'password123' });
+
+        expect(fieldErrorMap(result)).toEqual({});
+    });
+
+    test('returns an empty object for an empty input object', () => {
+        expect(fieldErrorMap(validateForm({}))).toEqual({});
     });
 });

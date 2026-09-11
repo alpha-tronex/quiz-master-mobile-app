@@ -1,0 +1,74 @@
+# End-to-end flow: register -> auto-login -> land on Home -> log out ->
+# land back on Login -> log in with the same credentials -> land on Home
+# again -> log out, leaving no session behind. Covers the Phase 2 exit
+# criteria in docs/PHASED_DELIVERY.md.
+#
+# Requires (pass with `maestro test --env`):
+#   MAESTRO_TEST_UNAME, MAESTRO_TEST_EMAIL, MAESTRO_TEST_PASS
+# The username must not already exist on the target backend — either run
+# against a staging DB that gets reset/seeded before the suite, or use a
+# per-run-unique value (e.g. a CI-generated uname). This flow does not
+# generate its own random credentials, to keep it readable and because the
+# right uniqueness/reset strategy depends on how the staging backend ends
+# up being provisioned (not yet decided — see Phase 6).
+#
+# appId is a placeholder: app.json doesn't set ios.bundleIdentifier or
+# android.package yet (that lands with EAS Build config in Phase 6) — update
+# this to match once it does.
+#
+# NOT executed in this sandbox: Maestro needs a real iOS Simulator or
+# Android emulator with the app installed and a reachable backend, neither
+# of which this environment has. See docs/TESTING.md, "End-to-end".
+appId: com.alphatronex.quizmaster
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Log in"
+
+# Register
+- tapOn: "Don't have an account? Register"
+- assertVisible: "Register"
+- tapOn:
+    id: "register-fname-input"
+- inputText: "Maestro"
+- tapOn:
+    id: "register-lname-input"
+- inputText: "Tester"
+- tapOn:
+    id: "register-uname-input"
+- inputText: "${MAESTRO_TEST_UNAME}"
+- tapOn:
+    id: "register-email-input"
+- inputText: "${MAESTRO_TEST_EMAIL}"
+- tapOn:
+    id: "register-pass-input"
+- inputText: "${MAESTRO_TEST_PASS}"
+- tapOn:
+    id: "register-confirm-pass-input"
+- inputText: "${MAESTRO_TEST_PASS}"
+- tapOn:
+    id: "register-submit-button"
+- assertVisible: "Welcome to Quiz Master"
+
+# Log out -> back on Login
+- tapOn: "Account"
+- tapOn:
+    id: "account-logout-button"
+- assertVisible: "Log in"
+
+# Log back in with the same credentials -> Home again
+- tapOn:
+    id: "login-uname-input"
+- inputText: "${MAESTRO_TEST_UNAME}"
+- tapOn:
+    id: "login-pass-input"
+- inputText: "${MAESTRO_TEST_PASS}"
+- tapOn:
+    id: "login-submit-button"
+- assertVisible: "Welcome to Quiz Master"
+
+# Log out again, leaving no session behind
+- tapOn: "Account"
+- tapOn:
+    id: "account-logout-button"
+- assertVisible: "Log in"

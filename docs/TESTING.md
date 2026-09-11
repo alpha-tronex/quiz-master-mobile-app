@@ -41,6 +41,8 @@ Critical user flows run against a real (or staging) backend on a simulator/emula
 
 Maestro is the lighter-weight option (YAML flow files, faster to write and maintain) and is the default recommendation unless the team already has Detox experience.
 
+**Status:** `.maestro/register-login-logout.yaml` covers the first flow (register → auto-login → Home → log out → log in → Home → log out), written against the Phase 2 screens' `testID`s. It has not been run in this sandbox — Maestro needs a real iOS Simulator or Android emulator with the app installed and a reachable backend, and this development environment has neither. Treat it as unverified against a live app until someone runs it on an actual device/simulator; the YAML itself documents its required env vars and the placeholder `appId`.
+
 ## CI
 
 GitHub Actions (or equivalent) runs on every PR in both repos:
