@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { colors } from '../../shared/theme';
 import { HomeScreen } from '../screens/HomeScreen';
-import { QuizListScreen } from '../../features/quizzes/screens/QuizListScreen';
+import { QuizzesStack } from './QuizzesStack';
 import { HistoryScreen } from '../../features/history/screens/HistoryScreen';
 import { AccountScreen } from '../../features/account/screens/AccountScreen';
 
@@ -31,7 +31,7 @@ export function MainTabs() {
             }}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Quizzes" component={QuizListScreen} />
+            <Tab.Screen name="Quizzes" component={QuizzesStack} />
             <Tab.Screen name="History" component={HistoryScreen} />
             <Tab.Screen name="Account" component={AccountScreen} />
         </Tab.Navigator>
