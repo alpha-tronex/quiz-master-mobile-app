@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
@@ -17,6 +18,12 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
  * mirroring `register.component.ts`. A successful register auto-logs the
  * user in (see useRegister.ts), so — like LoginScreen — this screen doesn't
  * navigate on success itself.
+ *
+ * Wrapped in a top-edge-only `SafeAreaView`: the header (screen title) sits
+ * flush against the top of the ScrollView content, so without this it
+ * renders under the status bar / Dynamic Island on notched devices. Bottom
+ * edge is left to the ScrollView itself since the keyboard/home indicator
+ * area is already handled by normal scroll padding.
  */
 export function RegisterScreen({ navigation }: Props) {
     const [fname, setFname] = useState('');
@@ -54,93 +61,99 @@ export function RegisterScreen({ navigation }: Props) {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <Text style={styles.title} accessibilityRole="header">Register</Text>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <Text style={styles.title} accessibilityRole="header">Register</Text>
 
-            {register.isError ? (
-                <Text style={styles.errorBanner} testID="register-error-banner">
-                    {register.error.message}
+                {register.isError ? (
+                    <Text style={styles.errorBanner} testID="register-error-banner">
+                        {register.error.message}
+                    </Text>
+                ) : null}
+
+                <TextField
+                    testID="register-fname-input"
+                    label="First name"
+                    value={fname}
+                    onChangeText={setFname}
+                    error={fieldErrors.fname}
+                />
+                <TextField
+                    testID="register-lname-input"
+                    label="Last name"
+                    value={lname}
+                    onChangeText={setLname}
+                    error={fieldErrors.lname}
+                />
+                <TextField
+                    testID="register-uname-input"
+                    label="Username"
+                    value={uname}
+                    onChangeText={setUname}
+                    error={fieldErrors.uname}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                />
+                <TextField
+                    testID="register-email-input"
+                    label="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    error={fieldErrors.email}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                />
+                <TextField
+                    testID="register-phone-input"
+                    label="Phone"
+                    value={phone}
+                    onChangeText={setPhone}
+                    error={fieldErrors.phone}
+                    keyboardType="phone-pad"
+                />
+                <TextField
+                    testID="register-pass-input"
+                    label="Password"
+                    value={pass}
+                    onChangeText={setPass}
+                    error={fieldErrors.pass}
+                    secureTextEntry
+                />
+                <TextField
+                    testID="register-confirm-pass-input"
+                    label="Confirm password"
+                    value={confirmPass}
+                    onChangeText={setConfirmPass}
+                    error={fieldErrors.confirmPass}
+                    secureTextEntry
+                />
+
+                <Button
+                    testID="register-submit-button"
+                    label="Register"
+                    onPress={handleSubmit}
+                    loading={register.isPending}
+                />
+
+                <Text
+                    testID="register-login-link"
+                    style={styles.link}
+                    accessibilityRole="link"
+                    onPress={() => navigation.navigate('Login')}
+                >
+                    Already have an account? Log in
                 </Text>
-            ) : null}
-
-            <TextField
-                testID="register-fname-input"
-                label="First name"
-                value={fname}
-                onChangeText={setFname}
-                error={fieldErrors.fname}
-            />
-            <TextField
-                testID="register-lname-input"
-                label="Last name"
-                value={lname}
-                onChangeText={setLname}
-                error={fieldErrors.lname}
-            />
-            <TextField
-                testID="register-uname-input"
-                label="Username"
-                value={uname}
-                onChangeText={setUname}
-                error={fieldErrors.uname}
-                autoCapitalize="none"
-                autoCorrect={false}
-            />
-            <TextField
-                testID="register-email-input"
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                error={fieldErrors.email}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-            />
-            <TextField
-                testID="register-phone-input"
-                label="Phone"
-                value={phone}
-                onChangeText={setPhone}
-                error={fieldErrors.phone}
-                keyboardType="phone-pad"
-            />
-            <TextField
-                testID="register-pass-input"
-                label="Password"
-                value={pass}
-                onChangeText={setPass}
-                error={fieldErrors.pass}
-                secureTextEntry
-            />
-            <TextField
-                testID="register-confirm-pass-input"
-                label="Confirm password"
-                value={confirmPass}
-                onChangeText={setConfirmPass}
-                error={fieldErrors.confirmPass}
-                secureTextEntry
-            />
-
-            <Button
-                testID="register-submit-button"
-                label="Register"
-                onPress={handleSubmit}
-                loading={register.isPending}
-            />
-
-            <Text
-                testID="register-login-link"
-                style={styles.link}
-                accessibilityRole="link"
-                onPress={() => navigation.navigate('Login')}
-            >
-                Already have an account? Log in
-            </Text>
-        </ScrollView>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background

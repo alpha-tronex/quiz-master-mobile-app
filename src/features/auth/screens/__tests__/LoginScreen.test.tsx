@@ -32,9 +32,10 @@ afterEach(() => {
 });
 
 describe('LoginScreen', () => {
-    test('renders the title, fields, submit button and register link', async () => {
+    test('renders the app name, title, fields, submit button and register link', async () => {
         await renderLoginScreen();
 
+        expect(screen.getByTestId('login-app-name')).toHaveTextContent('Quiz Master');
         expect(screen.getByRole('header', { name: 'Log in' })).toBeTruthy();
         expect(screen.getByTestId('login-uname-input')).toBeTruthy();
         expect(screen.getByTestId('login-pass-input')).toBeTruthy();

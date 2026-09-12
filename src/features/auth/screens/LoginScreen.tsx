@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
@@ -8,6 +9,10 @@ import { useLogin } from '../hooks/useLogin';
 import type { AuthStackParamList } from '../../../app/navigation/AuthStack';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+
+/** Displayed above the "Log in" heading so the screen reads as the app's
+ * entry point rather than a bare form — matches app.json's `name`. */
+const APP_NAME = 'Quiz Master';
 
 /**
  * POST /api/login via `useLogin`. A successful login persists the session
@@ -33,58 +38,72 @@ export function LoginScreen({ navigation }: Props) {
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title} accessibilityRole="header">Log in</Text>
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.container}>
+                <Text style={styles.appName} testID="login-app-name">{APP_NAME}</Text>
+                <Text style={styles.title} accessibilityRole="header">Log in</Text>
 
-            {login.isError ? (
-                <Text style={styles.errorBanner} testID="login-error-banner">
-                    {login.error.message}
+                {login.isError ? (
+                    <Text style={styles.errorBanner} testID="login-error-banner">
+                        {login.error.message}
+                    </Text>
+                ) : null}
+
+                <TextField
+                    testID="login-uname-input"
+                    label="Username"
+                    value={uname}
+                    onChangeText={setUname}
+                    error={fieldErrors.uname}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                />
+                <TextField
+                    testID="login-pass-input"
+                    label="Password"
+                    value={pass}
+                    onChangeText={setPass}
+                    error={fieldErrors.pass}
+                    secureTextEntry
+                />
+
+                <Button
+                    testID="login-submit-button"
+                    label="Log in"
+                    onPress={handleSubmit}
+                    loading={login.isPending}
+                />
+
+                <Text
+                    testID="login-register-link"
+                    style={styles.link}
+                    accessibilityRole="link"
+                    onPress={() => navigation.navigate('Register')}
+                >
+                    Don&apos;t have an account? Register
                 </Text>
-            ) : null}
-
-            <TextField
-                testID="login-uname-input"
-                label="Username"
-                value={uname}
-                onChangeText={setUname}
-                error={fieldErrors.uname}
-                autoCapitalize="none"
-                autoCorrect={false}
-            />
-            <TextField
-                testID="login-pass-input"
-                label="Password"
-                value={pass}
-                onChangeText={setPass}
-                error={fieldErrors.pass}
-                secureTextEntry
-            />
-
-            <Button
-                testID="login-submit-button"
-                label="Log in"
-                onPress={handleSubmit}
-                loading={login.isPending}
-            />
-
-            <Text
-                testID="login-register-link"
-                style={styles.link}
-                accessibilityRole="link"
-                onPress={() => navigation.navigate('Register')}
-            >
-                Don&apos;t have an account? Register
-            </Text>
-        </View>
+            </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background
+    },
     container: {
         flex: 1,
         backgroundColor: colors.background,
         justifyContent: 'center',
         padding: spacing.lg
+    },
+    appName: {
+        fontSize: typography.fontSize.xl,
+        fontWeight: typography.fontWeight.bold,
+        color: colors.primary,
+        marginBottom: spacing.sm,
+        textAlign: 'center'
     },
     title: {
         fontSize: typography.fontSize.xxl,
