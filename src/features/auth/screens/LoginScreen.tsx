@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, TextField } from '../../../shared/components';
@@ -20,12 +20,18 @@ const APP_NAME = 'Quiz Master';
  * `MainTabs` — this screen doesn't navigate on success itself (see
  * useLogin.ts for why). Field validation mirrors the Angular login
  * component: `uname`/`pass` checked with the same rules as the backend.
+ *
+ * The username field's return key focuses the password field
+ * (`submitBehavior="submit"` keeps the keyboard open across the hop); the
+ * password field's return/"go" key fires `handleSubmit` directly, so
+ * pressing it behaves like tapping the Log in button.
  */
 export function LoginScreen({ navigation }: Props) {
     const [uname, setUname] = useState('');
     const [pass, setPass] = useState('');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const login = useLogin();
+    const passRef = useRef<TextInput>(null);
 
     function handleSubmit() {
         const result = validateForm({ uname, pass });
@@ -57,14 +63,20 @@ export function LoginScreen({ navigation }: Props) {
                     error={fieldErrors.uname}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => passRef.current?.focus()}
                 />
                 <TextField
+                    ref={passRef}
                     testID="login-pass-input"
                     label="Password"
                     value={pass}
                     onChangeText={setPass}
                     error={fieldErrors.pass}
-                    secureTextEntry
+                    isPassword
+                    returnKeyType="go"
+                    onSubmitEditing={handleSubmit}
                 />
 
                 <Button

@@ -56,4 +56,24 @@ describe('TextField', () => {
         expect(input.props.secureTextEntry).toBe(true);
         expect(input.props.placeholder).toBe('Enter password');
     });
+
+    test('does not render a visibility toggle unless isPassword is set', async () => {
+        await render(<TextField label="Username" value="" onChangeText={jest.fn()} testID="input" />);
+
+        expect(screen.queryByTestId('input-toggle-visibility')).toBeNull();
+    });
+
+    test('isPassword hides the value by default and reveals it when the eye icon is pressed', async () => {
+        const user = userEvent.setup();
+        await render(<TextField label="Password" value="secret123" onChangeText={jest.fn()} isPassword testID="input" />);
+
+        const input = screen.getByTestId('input');
+        expect(input.props.secureTextEntry).toBe(true);
+
+        await user.press(screen.getByTestId('input-toggle-visibility'));
+        expect(screen.getByTestId('input').props.secureTextEntry).toBe(false);
+
+        await user.press(screen.getByTestId('input-toggle-visibility'));
+        expect(screen.getByTestId('input').props.secureTextEntry).toBe(true);
+    });
 });

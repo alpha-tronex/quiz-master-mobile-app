@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Button, TextField } from '../../../shared/components';
@@ -24,6 +24,12 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
  * renders under the status bar / Dynamic Island on notched devices. Bottom
  * edge is left to the ScrollView itself since the keyboard/home indicator
  * area is already handled by normal scroll padding.
+ *
+ * Each field's return key advances focus to the next field via a
+ * `TextField` ref (`submitBehavior="submit"` keeps the keyboard open across
+ * the hop instead of dismissing it); the last field, confirm-password,
+ * fires `handleSubmit` directly so pressing return/"go" there behaves like
+ * tapping the Register button.
  */
 export function RegisterScreen({ navigation }: Props) {
     const [fname, setFname] = useState('');
@@ -35,6 +41,13 @@ export function RegisterScreen({ navigation }: Props) {
     const [confirmPass, setConfirmPass] = useState('');
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const register = useRegister();
+
+    const lnameRef = useRef<TextInput>(null);
+    const unameRef = useRef<TextInput>(null);
+    const emailRef = useRef<TextInput>(null);
+    const phoneRef = useRef<TextInput>(null);
+    const passRef = useRef<TextInput>(null);
+    const confirmPassRef = useRef<TextInput>(null);
 
     function handleSubmit() {
         const result = validateForm({ uname, pass, email, phone, fname, lname });
@@ -77,15 +90,23 @@ export function RegisterScreen({ navigation }: Props) {
                     value={fname}
                     onChangeText={setFname}
                     error={fieldErrors.fname}
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => lnameRef.current?.focus()}
                 />
                 <TextField
+                    ref={lnameRef}
                     testID="register-lname-input"
                     label="Last name"
                     value={lname}
                     onChangeText={setLname}
                     error={fieldErrors.lname}
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => unameRef.current?.focus()}
                 />
                 <TextField
+                    ref={unameRef}
                     testID="register-uname-input"
                     label="Username"
                     value={uname}
@@ -93,8 +114,12 @@ export function RegisterScreen({ navigation }: Props) {
                     error={fieldErrors.uname}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => emailRef.current?.focus()}
                 />
                 <TextField
+                    ref={emailRef}
                     testID="register-email-input"
                     label="Email"
                     value={email}
@@ -103,30 +128,44 @@ export function RegisterScreen({ navigation }: Props) {
                     autoCapitalize="none"
                     autoCorrect={false}
                     keyboardType="email-address"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => phoneRef.current?.focus()}
                 />
                 <TextField
+                    ref={phoneRef}
                     testID="register-phone-input"
                     label="Phone"
                     value={phone}
                     onChangeText={setPhone}
                     error={fieldErrors.phone}
                     keyboardType="phone-pad"
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => passRef.current?.focus()}
                 />
                 <TextField
+                    ref={passRef}
                     testID="register-pass-input"
                     label="Password"
                     value={pass}
                     onChangeText={setPass}
                     error={fieldErrors.pass}
-                    secureTextEntry
+                    isPassword
+                    returnKeyType="next"
+                    submitBehavior="submit"
+                    onSubmitEditing={() => confirmPassRef.current?.focus()}
                 />
                 <TextField
+                    ref={confirmPassRef}
                     testID="register-confirm-pass-input"
                     label="Confirm password"
                     value={confirmPass}
                     onChangeText={setConfirmPass}
                     error={fieldErrors.confirmPass}
-                    secureTextEntry
+                    isPassword
+                    returnKeyType="go"
+                    onSubmitEditing={handleSubmit}
                 />
 
                 <Button

@@ -218,7 +218,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
 
         return (
             <SafeAreaView style={styles.safeArea}>
-                <ScrollView contentContainerStyle={styles.content}>
+                <ScrollView testID="take-quiz-results-scroll" style={styles.scrollView} contentContainerStyle={styles.content}>
                     <Text style={styles.quizTitle}>Quiz Results</Text>
                     <Text style={styles.quizSubtitle}>{quiz.title}</Text>
 
@@ -278,7 +278,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <ScrollView contentContainerStyle={styles.content}>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
                 <Text style={styles.quizTitle}>{quiz.title}</Text>
 
                 <Card style={styles.card}>
@@ -333,6 +333,16 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: colors.background
+    },
+    scrollView: {
+        // Without an explicit flex here the ScrollView sizes itself to its
+        // content (like any other View) instead of the SafeAreaView's
+        // bounded height, so long results (many questions) render past the
+        // bottom of the screen without being scrollable — the Accept/Retake
+        // buttons end up unreachable. `flex: 1` gives the ScrollView itself
+        // a fixed viewport to scroll within; `contentContainerStyle` below
+        // is what actually grows past that height.
+        flex: 1
     },
     content: {
         padding: spacing.lg

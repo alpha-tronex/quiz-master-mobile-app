@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RegisterScreen } from '../RegisterScreen';
@@ -124,6 +124,57 @@ describe('RegisterScreen', () => {
         expect(await screen.findByTestId('register-error-banner')).toHaveTextContent(
             'Username or email already in use'
         );
+    });
+
+    test('the password and confirm-password fields each hide their value and reveal it independently via the eye icon', async () => {
+        const user = userEvent.setup();
+        await renderRegisterScreen();
+
+        await user.type(screen.getByTestId('register-pass-input'), 'password123');
+        await user.type(screen.getByTestId('register-confirm-pass-input'), 'password123');
+        expect(screen.getByTestId('register-pass-input').props.secureTextEntry).toBe(true);
+        expect(screen.getByTestId('register-confirm-pass-input').props.secureTextEntry).toBe(true);
+
+        await user.press(screen.getByTestId('register-pass-input-toggle-visibility'));
+
+        expect(screen.getByTestId('register-pass-input').props.secureTextEntry).toBe(false);
+        expect(screen.getByTestId('register-confirm-pass-input').props.secureTextEntry).toBe(true);
+
+        await user.press(screen.getByTestId('register-confirm-pass-input-toggle-visibility'));
+
+        expect(screen.getByTestId('register-confirm-pass-input').props.secureTextEntry).toBe(false);
+    });
+
+    test('pressing return/"go" on the confirm-password field submits the form, same as tapping Register', async () => {
+        registerMock.mockResolvedValue({
+            id: 'u2',
+            fname: 'Grace',
+            lname: 'Hopper',
+            email: 'grace@example.com',
+            phone: '',
+            address: { street1: '', street2: '', street3: '', city: '', state: '', zipCode: '', country: '' },
+            uname: 'gracehopper',
+            pass: '',
+            type: 'student',
+            token: 'jwt-xyz'
+        });
+        const user = userEvent.setup();
+        await renderRegisterScreen();
+
+        await fillValidForm(user);
+        fireEvent(screen.getByTestId('register-confirm-pass-input'), 'submitEditing');
+
+        await waitFor(() => expect(registerMock).toHaveBeenCalled());
+    });
+
+    test('pressing return on an earlier field does not submit the form by itself', async () => {
+        const user = userEvent.setup();
+        await renderRegisterScreen();
+
+        await fillValidForm(user);
+        fireEvent(screen.getByTestId('register-fname-input'), 'submitEditing');
+
+        expect(registerMock).not.toHaveBeenCalled();
     });
 
     test('pressing the login link navigates to Login', async () => {

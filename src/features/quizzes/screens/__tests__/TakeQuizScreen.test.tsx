@@ -139,6 +139,28 @@ describe('TakeQuizScreen', () => {
         expect(screen.getAllByText('✓ Correct')).toHaveLength(3);
     });
 
+    test('the results screen is scrollable, so the Accept/Retake buttons stay reachable', async () => {
+        // Regression test: the results ScrollView previously had no `flex: 1`
+        // on its own `style`, so it sized itself to its content instead of
+        // the screen's bounded height and never actually scrolled, leaving
+        // the accept/retake buttons unreachable below the fold.
+        useQuizMock.mockReturnValue({ isPending: false, isError: false, data: testQuiz });
+        const user = userEvent.setup();
+        await renderScreen();
+
+        await user.press(screen.getByTestId('answer-option-1'));
+        await user.press(screen.getByTestId('answer-option-3'));
+        await user.press(screen.getByTestId('take-quiz-next-button'));
+        await user.press(screen.getByTestId('answer-option-1'));
+        await user.press(screen.getByTestId('take-quiz-next-button'));
+        await user.press(screen.getByTestId('answer-option-2'));
+        await user.press(screen.getByTestId('take-quiz-submit-button'));
+
+        const scrollView = await screen.findByTestId('take-quiz-results-scroll');
+        const flattenedStyle = [scrollView.props.style].flat();
+        expect(flattenedStyle).toContainEqual(expect.objectContaining({ flex: 1 }));
+    });
+
     test('going back to a previous question preserves its earlier selection', async () => {
         useQuizMock.mockReturnValue({ isPending: false, isError: false, data: testQuiz });
         const user = userEvent.setup();

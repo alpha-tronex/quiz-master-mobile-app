@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LoginScreen } from '../LoginScreen';
@@ -91,6 +91,51 @@ describe('LoginScreen', () => {
         expect(await screen.findByTestId('login-error-banner')).toHaveTextContent(
             'Invalid username or password'
         );
+    });
+
+    test('the password field hides its value by default and reveals it via the eye icon', async () => {
+        const user = userEvent.setup();
+        await renderLoginScreen();
+
+        await user.type(screen.getByTestId('login-pass-input'), 'password123');
+        expect(screen.getByTestId('login-pass-input').props.secureTextEntry).toBe(true);
+
+        await user.press(screen.getByTestId('login-pass-input-toggle-visibility'));
+
+        expect(screen.getByTestId('login-pass-input').props.secureTextEntry).toBe(false);
+    });
+
+    test('pressing return/"go" on the password field submits the form, same as tapping Log in', async () => {
+        loginMock.mockResolvedValue({
+            id: 'u1',
+            fname: 'Ada',
+            lname: 'Lovelace',
+            email: '',
+            phone: '',
+            address: { street1: '', street2: '', street3: '', city: '', state: '', zipCode: '', country: '' },
+            uname: 'adalovelace',
+            pass: '',
+            type: 'student',
+            token: 'jwt-abc'
+        });
+        const user = userEvent.setup();
+        await renderLoginScreen();
+
+        await user.type(screen.getByTestId('login-uname-input'), 'adalovelace');
+        await user.type(screen.getByTestId('login-pass-input'), 'password123');
+        fireEvent(screen.getByTestId('login-pass-input'), 'submitEditing');
+
+        await waitFor(() => expect(loginMock).toHaveBeenCalledWith({ uname: 'adalovelace', pass: 'password123' }));
+    });
+
+    test('pressing return on the username field does not submit the form by itself', async () => {
+        const user = userEvent.setup();
+        await renderLoginScreen();
+
+        await user.type(screen.getByTestId('login-uname-input'), 'adalovelace');
+        fireEvent(screen.getByTestId('login-uname-input'), 'submitEditing');
+
+        expect(loginMock).not.toHaveBeenCalled();
     });
 
     test('pressing the register link navigates to Register', async () => {
