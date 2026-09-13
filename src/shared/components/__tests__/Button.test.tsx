@@ -48,4 +48,12 @@ describe('Button', () => {
             busy: true
         });
     });
+
+    test('keeps the label on a single line, shrinking to fit rather than wrapping', async () => {
+        await render(<Button label="Previous" onPress={jest.fn()} />);
+
+        const label = screen.getByText('Previous');
+        expect(label.props.numberOfLines).toBe(1);
+        expect(label.props.adjustsFontSizeToFit).toBe(true);
+    });
 });

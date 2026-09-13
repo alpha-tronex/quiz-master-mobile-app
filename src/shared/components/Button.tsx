@@ -48,7 +48,16 @@ export function Button({
             {loading ? (
                 <ActivityIndicator color={variant === 'outline' ? colors.primary : colors.textInverse} />
             ) : (
-                <Text style={[styles.label, labelVariantStyles[variant]]}>{label}</Text>
+                // numberOfLines/adjustsFontSizeToFit stop a long label from wrapping onto a
+                // second line when the button is squeezed (e.g. three buttons sharing a row) —
+                // it shrinks the font just enough to stay on one line instead.
+                <Text
+                    style={[styles.label, labelVariantStyles[variant]]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                >
+                    {label}
+                </Text>
             )}
         </Pressable>
     );

@@ -396,7 +396,12 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg
     },
     navButton: {
-        flex: 1
+        flex: 1,
+        // Three buttons share this row (vs. the default single/two-button
+        // layout Button.base was padded for), so the standard
+        // paddingHorizontal left too little room for "Previous"/"Submit"
+        // and wrapped their labels onto a second line.
+        paddingHorizontal: spacing.sm
     },
     resultCard: {
         marginBottom: spacing.md
