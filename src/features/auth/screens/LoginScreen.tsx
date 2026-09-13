@@ -15,11 +15,18 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 const APP_NAME = 'Quiz Master';
 
 /**
- * POST /api/login via `useLogin`. A successful login persists the session
- * in `authStore`, which `RootNavigator` picks up to switch over to
- * `MainTabs` — this screen doesn't navigate on success itself (see
- * useLogin.ts for why). Field validation mirrors the Angular login
- * component: `uname`/`pass` checked with the same rules as the backend.
+ * POST /api/login via `useLogin`. Mirrors the Angular login component's
+ * mandatory-fields UX (`login.component.html`) rather than just its field
+ * set: both `uname`/`pass` are required there via template-driven
+ * `required`/`minlength`/`pattern` validators that (a) keep the submit
+ * button disabled until the form is valid — `[disabled]="loginForm.invalid"`
+ * — and (b) only surface a field's error once it's been interacted with —
+ * `*ngIf="uname.invalid && (uname.dirty || uname.touched)"`. There's no
+ * Angular forms module on the RN side, so `validateForm`/`fieldErrorMap`
+ * (the same functions used at submit time) are recomputed on every render
+ * to derive both the disabled state and the per-field errors, and a
+ * `touched` map recreates "dirty || touched" — a field's error only renders
+ * once it has been blurred at least once, or a submit was attempted.
  *
  * The username field's return key focuses the password field
  * (`submitBehavior="submit"` keeps the keyboard open across the hop); the
@@ -29,17 +36,27 @@ const APP_NAME = 'Quiz Master';
 export function LoginScreen({ navigation }: Props) {
     const [uname, setUname] = useState('');
     const [pass, setPass] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [submitAttempted, setSubmitAttempted] = useState(false);
     const login = useLogin();
     const passRef = useRef<TextInput>(null);
 
+    const validation = validateForm({ uname, pass });
+    const errors = fieldErrorMap(validation);
+
+    function fieldError(field: string): string | undefined {
+        return touched[field] || submitAttempted ? errors[field] : undefined;
+    }
+
+    function markTouched(field: string) {
+        return () => setTouched((prev) => ({ ...prev, [field]: true }));
+    }
+
     function handleSubmit() {
-        const result = validateForm({ uname, pass });
-        if (!result.valid) {
-            setFieldErrors(fieldErrorMap(result));
+        setSubmitAttempted(true);
+        if (!validation.valid) {
             return;
         }
-        setFieldErrors({});
         login.mutate({ uname: uname.trim(), pass });
     }
 
@@ -60,7 +77,8 @@ export function LoginScreen({ navigation }: Props) {
                     label="Username"
                     value={uname}
                     onChangeText={setUname}
-                    error={fieldErrors.uname}
+                    onBlur={markTouched('uname')}
+                    error={fieldError('uname')}
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="next"
@@ -73,7 +91,8 @@ export function LoginScreen({ navigation }: Props) {
                     label="Password"
                     value={pass}
                     onChangeText={setPass}
-                    error={fieldErrors.pass}
+                    onBlur={markTouched('pass')}
+                    error={fieldError('pass')}
                     isPassword
                     returnKeyType="go"
                     onSubmitEditing={handleSubmit}
@@ -83,6 +102,7 @@ export function LoginScreen({ navigation }: Props) {
                     testID="login-submit-button"
                     label="Log in"
                     onPress={handleSubmit}
+                    disabled={!validation.valid}
                     loading={login.isPending}
                 />
 

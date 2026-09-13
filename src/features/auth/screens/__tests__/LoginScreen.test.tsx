@@ -43,15 +43,35 @@ describe('LoginScreen', () => {
         expect(screen.getByTestId('login-register-link')).toBeTruthy();
     });
 
-    test('shows validation errors and does not call login when submitting an empty form', async () => {
+    test('disables the submit button while the form is empty, and does not call login', async () => {
         const user = userEvent.setup();
         await renderLoginScreen();
 
+        expect(screen.getByTestId('login-submit-button').props.accessibilityState.disabled).toBe(true);
+
         await user.press(screen.getByTestId('login-submit-button'));
+
+        expect(loginMock).not.toHaveBeenCalled();
+    });
+
+    test('shows an inline error under a required field once it has been blurred empty', async () => {
+        await renderLoginScreen();
+
+        await fireEvent(screen.getByTestId('login-uname-input'), 'blur');
+        await fireEvent(screen.getByTestId('login-pass-input'), 'blur');
 
         expect(await screen.findByText('Username is required')).toBeTruthy();
         expect(screen.getByText('Password is required')).toBeTruthy();
-        expect(loginMock).not.toHaveBeenCalled();
+    });
+
+    test('re-enables the submit button once both fields are valid', async () => {
+        const user = userEvent.setup();
+        await renderLoginScreen();
+
+        await user.type(screen.getByTestId('login-uname-input'), 'adalovelace');
+        await user.type(screen.getByTestId('login-pass-input'), 'password123');
+
+        expect(screen.getByTestId('login-submit-button').props.accessibilityState.disabled).toBe(false);
     });
 
     test('submits trimmed credentials and persists the session on success', async () => {
@@ -123,7 +143,7 @@ describe('LoginScreen', () => {
 
         await user.type(screen.getByTestId('login-uname-input'), 'adalovelace');
         await user.type(screen.getByTestId('login-pass-input'), 'password123');
-        fireEvent(screen.getByTestId('login-pass-input'), 'submitEditing');
+        await fireEvent(screen.getByTestId('login-pass-input'), 'submitEditing');
 
         await waitFor(() => expect(loginMock).toHaveBeenCalledWith({ uname: 'adalovelace', pass: 'password123' }));
     });
@@ -133,7 +153,7 @@ describe('LoginScreen', () => {
         await renderLoginScreen();
 
         await user.type(screen.getByTestId('login-uname-input'), 'adalovelace');
-        fireEvent(screen.getByTestId('login-uname-input'), 'submitEditing');
+        await fireEvent(screen.getByTestId('login-uname-input'), 'submitEditing');
 
         expect(loginMock).not.toHaveBeenCalled();
     });

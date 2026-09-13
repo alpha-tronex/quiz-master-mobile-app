@@ -10,15 +10,24 @@ import { useStates } from '../hooks/useStates';
 import { useCountries } from '../hooks/useCountries';
 import type { Address } from '../../../shared/types';
 
-const EMPTY_ADDRESS: Address = {
-    street1: '',
-    street2: '',
-    street3: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: ''
-};
+/**
+ * Coalesces every field individually rather than `{ ...EMPTY_ADDRESS, ...address }`,
+ * because legacy user records can have a field explicitly set to `null` (not just
+ * absent) — a plain object spread would let that `null` through and crash the
+ * `.trim()` calls in `handleSave`, or make a `TextField` a React "controlled input
+ * received null" warning.
+ */
+function normalizeAddress(address: Partial<Address> | null | undefined): Address {
+    return {
+        street1: address?.street1 ?? '',
+        street2: address?.street2 ?? '',
+        street3: address?.street3 ?? '',
+        city: address?.city ?? '',
+        state: address?.state ?? '',
+        zipCode: address?.zipCode ?? '',
+        country: address?.country ?? ''
+    };
+}
 
 /**
  * `PUT /api/user/update` via `useUpdateAccount`. Field set mirrors the web
@@ -50,7 +59,7 @@ export function AccountScreen() {
     const [lname, setLname] = useState(user?.lname ?? '');
     const [email, setEmail] = useState(user?.email ?? '');
     const [phone, setPhone] = useState(user?.phone ?? '');
-    const [address, setAddress] = useState<Address>(user?.address ?? EMPTY_ADDRESS);
+    const [address, setAddress] = useState<Address>(normalizeAddress(user?.address));
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [justSaved, setJustSaved] = useState(false);
 
@@ -89,11 +98,11 @@ export function AccountScreen() {
                 phone: phone.trim(),
                 address: {
                     ...address,
-                    street1: address.street1.trim(),
-                    street2: address.street2.trim(),
-                    street3: address.street3.trim(),
-                    city: address.city.trim(),
-                    zipCode: address.zipCode.trim()
+                    street1: (address.street1 ?? '').trim(),
+                    street2: (address.street2 ?? '').trim(),
+                    street3: (address.street3 ?? '').trim(),
+                    city: (address.city ?? '').trim(),
+                    zipCode: (address.zipCode ?? '').trim()
                 }
             },
             { onSuccess: () => setJustSaved(true) }

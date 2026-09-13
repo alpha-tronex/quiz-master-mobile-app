@@ -56,28 +56,60 @@ describe('RegisterScreen', () => {
         expect(screen.getByTestId('register-login-link')).toBeTruthy();
     });
 
-    test('shows validation errors and does not call register when uname/pass are blank', async () => {
+    test('renders a Required information and an Optional information section', async () => {
+        await renderRegisterScreen();
+
+        expect(screen.getByText('Required information')).toBeTruthy();
+        expect(screen.getByText('Optional information')).toBeTruthy();
+        expect(screen.getByTestId('register-required-section')).toBeTruthy();
+        expect(screen.getByTestId('register-optional-section')).toBeTruthy();
+    });
+
+    test('disables the submit button while required fields are blank, and does not call register', async () => {
         const user = userEvent.setup();
         await renderRegisterScreen();
 
+        expect(screen.getByTestId('register-submit-button').props.accessibilityState.disabled).toBe(true);
+
         await user.press(screen.getByTestId('register-submit-button'));
 
-        expect(await screen.findByText('Username is required')).toBeTruthy();
-        expect(screen.getByText('Password is required')).toBeTruthy();
         expect(registerMock).not.toHaveBeenCalled();
     });
 
-    test('shows a mismatch error and does not call register when passwords differ', async () => {
+    test('shows an inline error under a required field once it has been blurred empty', async () => {
+        await renderRegisterScreen();
+
+        await fireEvent(screen.getByTestId('register-uname-input'), 'blur');
+        await fireEvent(screen.getByTestId('register-pass-input'), 'blur');
+        await fireEvent(screen.getByTestId('register-confirm-pass-input'), 'blur');
+
+        expect(await screen.findByText('Username is required')).toBeTruthy();
+        expect(screen.getByText('Password is required')).toBeTruthy();
+        expect(screen.getByText('Confirm password is required')).toBeTruthy();
+    });
+
+    test('shows a mismatch error and keeps the submit button disabled when passwords differ', async () => {
         const user = userEvent.setup();
         await renderRegisterScreen();
 
         await user.type(screen.getByTestId('register-uname-input'), 'gracehopper');
         await user.type(screen.getByTestId('register-pass-input'), 'password123');
         await user.type(screen.getByTestId('register-confirm-pass-input'), 'somethingelse');
-        await user.press(screen.getByTestId('register-submit-button'));
 
         expect(await screen.findByText('Passwords do not match')).toBeTruthy();
+        expect(screen.getByTestId('register-submit-button').props.accessibilityState.disabled).toBe(true);
         expect(registerMock).not.toHaveBeenCalled();
+    });
+
+    test('enables the submit button once every required field is valid, with optional fields left blank', async () => {
+        const user = userEvent.setup();
+        await renderRegisterScreen();
+
+        await user.type(screen.getByTestId('register-uname-input'), 'gracehopper');
+        await user.type(screen.getByTestId('register-pass-input'), 'password123');
+        await user.type(screen.getByTestId('register-confirm-pass-input'), 'password123');
+
+        expect(screen.getByTestId('register-submit-button').props.accessibilityState.disabled).toBe(false);
     });
 
     test('submits a trimmed payload and persists the session on success', async () => {
@@ -145,7 +177,7 @@ describe('RegisterScreen', () => {
         expect(screen.getByTestId('register-confirm-pass-input').props.secureTextEntry).toBe(false);
     });
 
-    test('pressing return/"go" on the confirm-password field submits the form, same as tapping Register', async () => {
+    test('pressing return/"go" on the email field submits the form, same as tapping Register', async () => {
         registerMock.mockResolvedValue({
             id: 'u2',
             fname: 'Grace',
@@ -162,7 +194,7 @@ describe('RegisterScreen', () => {
         await renderRegisterScreen();
 
         await fillValidForm(user);
-        fireEvent(screen.getByTestId('register-confirm-pass-input'), 'submitEditing');
+        await fireEvent(screen.getByTestId('register-email-input'), 'submitEditing');
 
         await waitFor(() => expect(registerMock).toHaveBeenCalled());
     });
@@ -172,7 +204,7 @@ describe('RegisterScreen', () => {
         await renderRegisterScreen();
 
         await fillValidForm(user);
-        fireEvent(screen.getByTestId('register-fname-input'), 'submitEditing');
+        await fireEvent(screen.getByTestId('register-fname-input'), 'submitEditing');
 
         expect(registerMock).not.toHaveBeenCalled();
     });
