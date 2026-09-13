@@ -70,6 +70,8 @@ export function Select({ label, value, onValueChange, options, placeholder = 'Se
                                 <Pressable
                                     testID={testID ? `${testID}-option-${item.value}` : undefined}
                                     accessibilityRole="button"
+                                    accessibilityLabel={item.label}
+                                    accessibilityState={{ selected: item.value === value }}
                                     onPress={() => {
                                         onValueChange(item.value);
                                         setOpen(false);
@@ -80,7 +82,7 @@ export function Select({ label, value, onValueChange, options, placeholder = 'Se
                                         {item.label}
                                     </Text>
                                     {item.value === value ? (
-                                        <Ionicons name="checkmark" size={18} color={colors.primary} />
+                                        <Ionicons name="checkmark" size={18} color={colors.primaryText} />
                                     ) : null}
                                 </Pressable>
                             )}
@@ -111,7 +113,8 @@ const styles = StyleSheet.create({
         borderRadius: radii.md,
         paddingVertical: spacing.sm,
         paddingHorizontal: spacing.md,
-        backgroundColor: colors.background
+        backgroundColor: colors.background,
+        minHeight: 44
     },
     triggerError: {
         borderColor: colors.danger
@@ -127,7 +130,7 @@ const styles = StyleSheet.create({
     error: {
         marginTop: spacing.xs,
         fontSize: typography.fontSize.xs,
-        color: colors.danger
+        color: colors.dangerText
     },
     backdrop: {
         flex: 1,
@@ -165,6 +168,6 @@ const styles = StyleSheet.create({
     },
     optionTextSelected: {
         fontWeight: typography.fontWeight.bold,
-        color: colors.primary
+        color: colors.primaryText
     }
 });

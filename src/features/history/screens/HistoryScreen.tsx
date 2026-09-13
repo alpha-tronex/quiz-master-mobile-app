@@ -1,7 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../shared/components';
+import { Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { useQuizHistory } from '../hooks/useQuizHistory';
@@ -45,24 +45,20 @@ export function HistoryScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <Text style={styles.title}>Quiz History</Text>
+            <Text style={styles.title} accessibilityRole="header">Quiz History</Text>
 
             {historyQuery.isPending ? (
-                <View style={styles.centered} testID="history-loading">
-                    <ActivityIndicator color={colors.primary} size="large" />
-                </View>
+                <LoadingState testID="history-loading" />
             ) : historyQuery.isError ? (
-                <View style={styles.centered}>
-                    <Text style={styles.errorText} testID="history-error">
-                        {historyQuery.error.message}
-                    </Text>
-                </View>
+                <ErrorState
+                    message={historyQuery.error.message}
+                    testID="history-error"
+                    onRetry={() => historyQuery.refetch()}
+                    retrying={historyQuery.isRefetching}
+                    retryTestID="history-retry-button"
+                />
             ) : historyQuery.data.length === 0 ? (
-                <View style={styles.centered}>
-                    <Text style={styles.subtitle} testID="history-empty">
-                        You haven&apos;t taken any quizzes yet.
-                    </Text>
-                </View>
+                <EmptyState message="You haven't taken any quizzes yet." testID="history-empty" />
             ) : (
                 <FlatList
                     data={historyQuery.data}
@@ -73,12 +69,21 @@ export function HistoryScreen() {
                         const total = item.totalQuestions ?? 0;
                         const percentage = total > 0 ? ((score / total) * 100).toFixed(1) : '0.0';
 
+                        const dateLabel = formatDate(item.completedAt);
+                        const scoreLabel = `Score: ${score} / ${total} (${percentage}%)`;
+                        const durationLabel = `Time taken: ${formatDuration(item.duration)}`;
+
                         return (
-                            <Card style={styles.card} testID="history-item">
+                            <Card
+                                style={styles.card}
+                                testID="history-item"
+                                accessible
+                                accessibilityLabel={`${item.title}, completed ${dateLabel}, ${scoreLabel}, ${durationLabel}`}
+                            >
                                 <Text style={styles.quizTitle}>{item.title}</Text>
-                                <Text style={styles.rowText}>{formatDate(item.completedAt)}</Text>
-                                <Text style={styles.rowText}>{`Score: ${score} / ${total} (${percentage}%)`}</Text>
-                                <Text style={styles.rowText}>{`Time taken: ${formatDuration(item.duration)}`}</Text>
+                                <Text style={styles.rowText}>{dateLabel}</Text>
+                                <Text style={styles.rowText}>{scoreLabel}</Text>
+                                <Text style={styles.rowText}>{durationLabel}</Text>
                             </Card>
                         );
                     }}
@@ -100,22 +105,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingTop: spacing.lg,
         paddingBottom: spacing.md
-    },
-    centered: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing.lg
-    },
-    subtitle: {
-        fontSize: typography.fontSize.md,
-        color: colors.textMuted,
-        textAlign: 'center'
-    },
-    errorText: {
-        fontSize: typography.fontSize.md,
-        color: colors.danger,
-        textAlign: 'center'
     },
     listContent: {
         padding: spacing.lg

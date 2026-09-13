@@ -76,4 +76,18 @@ describe('TextField', () => {
         await user.press(screen.getByTestId('input-toggle-visibility'));
         expect(screen.getByTestId('input').props.secureTextEntry).toBe(true);
     });
+
+    test('appends the error to the accessibilityLabel so a screen reader announces it on focus', async () => {
+        await render(
+            <TextField label="Username" value="" onChangeText={jest.fn()} error="Username is required" testID="input" />
+        );
+
+        expect(screen.getByTestId('input').props.accessibilityLabel).toBe('Username, Username is required');
+    });
+
+    test('uses the plain label as accessibilityLabel when there is no error', async () => {
+        await render(<TextField label="Username" value="ada" onChangeText={jest.fn()} testID="input" />);
+
+        expect(screen.getByTestId('input').props.accessibilityLabel).toBe('Username');
+    });
 });

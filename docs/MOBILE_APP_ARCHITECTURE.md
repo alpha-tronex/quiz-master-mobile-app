@@ -54,6 +54,8 @@ src/
   core/
     auth/
       authStore.ts            Session state (Zustand), token persistence
+    network/
+      useNetworkStatus.ts      Connectivity hook (NetInfo), backs the global OfflineBanner + Retry affordances
     config.ts                  API base URL, environment
     logger.ts                  Mirrors LoggerService from the Angular app
 ```
@@ -83,6 +85,9 @@ One `httpClient` wrapping `fetch`, with:
 
 ### Validation
 Client-side validation rules (username, password, email, phone, zip) currently exist in the Angular app (`validation.service.ts`) and are duplicated server-side (`validators.js`). The mobile app will need a third copy. Rather than hand-porting rules that can drift, `shared/validation/` should be written from the same rules as `validators.js` and flagged for future consolidation into one shared config/package consumed by all three.
+
+### Branding
+`assets/` holds the app icon (`icon.png`), Android adaptive icon layers (`android-icon-{foreground,background,monochrome}.png`), the web favicon (`favicon.png`), and the splash image (`splash-icon.png`, wired up via the `expo-splash-screen` config plugin in `app.json`). The Angular web app has no dedicated logo or icon asset to port (its favicon is the unmodified Angular CLI default), so these are a generated placeholder: a "QM" monogram in the brand colors from `shared/theme/theme.ts` (`colors.primary` `#1abc9c` teal fill, `colors.secondary` `#2c3e50` navy on the splash screen). Swap these files for real designed artwork whenever one is available — nothing else in the app references them by name.
 
 ## What's explicitly out of scope for v1
 - Offline caching/sync (SQLite, WatermelonDB, etc.)

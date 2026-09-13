@@ -1,8 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Card } from '../../../shared/components';
+import { Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useQuizzes } from '../hooks/useQuizzes';
 import type { QuizzesStackParamList } from '../../../app/navigation/QuizzesStack';
@@ -22,24 +22,20 @@ export function QuizListScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <Text style={styles.title}>Quizzes</Text>
+            <Text style={styles.title} accessibilityRole="header">Quizzes</Text>
 
             {quizzesQuery.isPending ? (
-                <View style={styles.centered} testID="quiz-list-loading">
-                    <ActivityIndicator color={colors.primary} size="large" />
-                </View>
+                <LoadingState testID="quiz-list-loading" />
             ) : quizzesQuery.isError ? (
-                <View style={styles.centered}>
-                    <Text style={styles.errorText} testID="quiz-list-error">
-                        {quizzesQuery.error.message}
-                    </Text>
-                </View>
+                <ErrorState
+                    message={quizzesQuery.error.message}
+                    testID="quiz-list-error"
+                    onRetry={() => quizzesQuery.refetch()}
+                    retrying={quizzesQuery.isRefetching}
+                    retryTestID="quiz-list-retry-button"
+                />
             ) : quizzesQuery.data.length === 0 ? (
-                <View style={styles.centered}>
-                    <Text style={styles.subtitle} testID="quiz-list-empty">
-                        No quizzes are available right now.
-                    </Text>
-                </View>
+                <EmptyState message="No quizzes are available right now." testID="quiz-list-empty" />
             ) : (
                 <FlatList
                     data={quizzesQuery.data}
@@ -48,6 +44,9 @@ export function QuizListScreen({ navigation }: Props) {
                     renderItem={({ item }) => (
                         <Pressable
                             testID={`quiz-list-item-${item.id}`}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${item.title} quiz`}
+                            accessibilityHint="Opens this quiz"
                             onPress={() => navigation.navigate('TakeQuiz', { quizId: item.id })}
                         >
                             <Card style={styles.card}>
@@ -73,22 +72,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         paddingTop: spacing.lg,
         paddingBottom: spacing.md
-    },
-    centered: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing.lg
-    },
-    subtitle: {
-        fontSize: typography.fontSize.md,
-        color: colors.textMuted,
-        textAlign: 'center'
-    },
-    errorText: {
-        fontSize: typography.fontSize.md,
-        color: colors.danger,
-        textAlign: 'center'
     },
     listContent: {
         padding: spacing.lg

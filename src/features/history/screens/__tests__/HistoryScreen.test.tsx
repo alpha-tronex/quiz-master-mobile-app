@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, userEvent } from '@testing-library/react-native';
 import { HistoryScreen } from '../HistoryScreen';
 import { useQuizHistory } from '../../hooks/useQuizHistory';
 import { useAuthStore } from '../../../../core/auth/authStore';
@@ -35,6 +35,14 @@ afterEach(() => {
 });
 
 describe('HistoryScreen', () => {
+    test('renders the title as a header for screen readers', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+
+        await render(<HistoryScreen />);
+
+        expect(screen.getByRole('header', { name: 'Quiz History' })).toBeTruthy();
+    });
+
     test('shows a loading state while history is pending', async () => {
         useQuizHistoryMock.mockReturnValue({ isPending: true, isError: false });
 
@@ -44,11 +52,34 @@ describe('HistoryScreen', () => {
     });
 
     test('shows an error message when history fails to load', async () => {
-        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: true, error: { message: 'Network error' } });
+        useQuizHistoryMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch: jest.fn(),
+            isRefetching: false
+        });
 
         await render(<HistoryScreen />);
 
         expect(screen.getByTestId('history-error')).toHaveTextContent('Network error');
+    });
+
+    test('retries the query when Retry is pressed on the error state', async () => {
+        const refetch = jest.fn();
+        useQuizHistoryMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch,
+            isRefetching: false
+        });
+        const user = userEvent.setup();
+        await render(<HistoryScreen />);
+
+        await user.press(screen.getByTestId('history-retry-button'));
+
+        expect(refetch).toHaveBeenCalledTimes(1);
     });
 
     test('shows an empty state when there are no completed quizzes', async () => {
@@ -67,6 +98,18 @@ describe('HistoryScreen', () => {
         expect(screen.getByText('General Knowledge')).toBeTruthy();
         expect(screen.getByText('Score: 3 / 4 (75.0%)')).toBeTruthy();
         expect(screen.getByText('Time taken: 1m 35s')).toBeTruthy();
+    });
+
+    test('groups each card into a single accessibility announcement for screen readers', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz] });
+
+        await render(<HistoryScreen />);
+
+        const card = screen.getByTestId('history-item');
+        expect(card.props.accessible).toBe(true);
+        expect(card.props.accessibilityLabel).toContain('General Knowledge');
+        expect(card.props.accessibilityLabel).toContain('Score: 3 / 4 (75.0%)');
+        expect(card.props.accessibilityLabel).toContain('Time taken: 1m 35s');
     });
 
     test('passes the logged-in username to useQuizHistory', async () => {

@@ -22,12 +22,27 @@ export const colors = {
     surface: '#f8f9fa',
     border: '#dee2e6',
     text: '#2c3e50',
-    textMuted: '#6c757d',
+    // Slightly darkened from the Bootstrap default (#6c757d) to clear 4.5:1
+    // against `background`/`surface` — the original sat just under threshold.
+    textMuted: '#6b747c',
     textInverse: '#ffffff',
     success: '#28a745',
     warning: '#ffc107',
     danger: '#dc3545',
-    info: '#007bff'
+    info: '#007bff',
+    // Darkened variants of the brand/semantic colors above, for use ONLY
+    // where the color is text, an icon conveying meaning, or a meaningful
+    // selected/error UI-state indicator (WCAG 1.4.3 text contrast 4.5:1,
+    // 1.4.11 non-text contrast 3:1). The base colors above stay unchanged
+    // for backgrounds, borders, and decorative accents, where they already
+    // pass — e.g. white-on-`primary` is only ~2.4:1, too low for the bold
+    // button label, but `primary` itself is fine as a card border. Keeping
+    // both avoids a global brand-color change while fixing the real
+    // failures found in the Phase 5 contrast audit.
+    primaryText: '#12846d',
+    successText: '#208637',
+    dangerText: '#d33342',
+    infoText: '#0071eb'
 } as const;
 
 export const spacing = {

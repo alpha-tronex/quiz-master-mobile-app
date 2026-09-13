@@ -11,8 +11,8 @@ import { colors, spacing, typography } from '../../shared/theme';
 export function HomeScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Welcome to Quiz Master</Text>
-            <Text style={styles.subtitle}>Your dashboard is coming together over the next few phases.</Text>
+            <Text style={styles.title} accessibilityRole="header">Welcome to Quiz Master</Text>
+            <Text style={styles.subtitle}>Pick a quiz from the Quizzes tab to get started.</Text>
         </View>
     );
 }

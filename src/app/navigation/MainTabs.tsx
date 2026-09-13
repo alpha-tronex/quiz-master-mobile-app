@@ -26,7 +26,10 @@ export function MainTabs() {
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: colors.primary,
+                // `primaryText` (not the base `primary` teal) — the active tab's
+                // label is small text plus a meaningful selected-state icon, and
+                // `primary` alone falls short of the 4.5:1/3:1 contrast minimums.
+                tabBarActiveTintColor: colors.primaryText,
                 tabBarInactiveTintColor: colors.textMuted
             }}
         >

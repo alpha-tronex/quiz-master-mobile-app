@@ -153,9 +153,10 @@ describe('RegisterScreen', () => {
         await fillValidForm(user);
         await user.press(screen.getByTestId('register-submit-button'));
 
-        expect(await screen.findByTestId('register-error-banner')).toHaveTextContent(
-            'Username or email already in use'
-        );
+        const errorBanner = await screen.findByTestId('register-error-banner');
+        expect(errorBanner).toHaveTextContent('Username or email already in use');
+        expect(errorBanner.props.accessibilityRole).toBe('alert');
+        expect(errorBanner.props.accessibilityLiveRegion).toBe('polite');
     });
 
     test('the password and confirm-password fields each hide their value and reveal it independently via the eye icon', async () => {

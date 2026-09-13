@@ -1,7 +1,9 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuthStore } from '../../core/auth/authStore';
+import { useNetworkStatus } from '../../core/network/useNetworkStatus';
 import { colors } from '../../shared/theme';
+import { OfflineBanner } from '../../shared/components';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
 
@@ -11,10 +13,15 @@ import { MainTabs } from './MainTabs';
  * blocking spinner while the persisted session is still being read from
  * secure storage at launch, so the auth stack doesn't flash before a valid
  * session is restored.
+ *
+ * Also renders a global `OfflineBanner` above whichever stack is active, so
+ * connectivity loss is visible regardless of auth state or which screen is
+ * showing.
  */
 export function RootNavigator() {
     const token = useAuthStore((state) => state.token);
     const isHydrating = useAuthStore((state) => state.isHydrating);
+    const isOnline = useNetworkStatus();
 
     if (isHydrating) {
         return (
@@ -24,10 +31,18 @@ export function RootNavigator() {
         );
     }
 
-    return token ? <MainTabs /> : <AuthStack />;
+    return (
+        <View style={styles.root}>
+            {isOnline ? null : <OfflineBanner />}
+            {token ? <MainTabs /> : <AuthStack />}
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
+    root: {
+        flex: 1
+    },
     loading: {
         flex: 1,
         alignItems: 'center',

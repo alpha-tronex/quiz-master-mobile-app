@@ -96,11 +96,46 @@ describe('TakeQuizScreen', () => {
     });
 
     test('shows an error message when the quiz fails to load', async () => {
-        useQuizMock.mockReturnValue({ isPending: false, isError: true, error: { message: 'Network error' } });
+        useQuizMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch: jest.fn(),
+            isRefetching: false
+        });
 
         await renderScreen();
 
         expect(screen.getByTestId('take-quiz-error')).toHaveTextContent('Network error');
+    });
+
+    test('retries the query when Retry is pressed on the error state', async () => {
+        const refetch = jest.fn();
+        useQuizMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch,
+            isRefetching: false
+        });
+        const user = userEvent.setup();
+        await renderScreen();
+
+        await user.press(screen.getByTestId('take-quiz-retry-button'));
+
+        expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    test('shows an empty state when the quiz has no questions', async () => {
+        useQuizMock.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: { ...testQuiz, questions: [] }
+        });
+
+        await renderScreen();
+
+        expect(screen.getByTestId('take-quiz-empty')).toHaveTextContent('Please check again later. Thanks.');
     });
 
     test('renders the first question with a disabled submit button until every question is answered', async () => {
@@ -111,6 +146,14 @@ describe('TakeQuizScreen', () => {
         expect(screen.getByText('Which of the following are programming languages?')).toBeTruthy();
         expect(screen.getByTestId('take-quiz-submit-button').props.accessibilityState).toMatchObject({ disabled: true });
         expect(screen.getByTestId('take-quiz-previous-button').props.accessibilityState).toMatchObject({ disabled: true });
+    });
+
+    test('renders the quiz title as a header for screen readers', async () => {
+        useQuizMock.mockReturnValue({ isPending: false, isError: false, data: testQuiz });
+
+        await renderScreen();
+
+        expect(screen.getByRole('header', { name: 'General Knowledge' })).toBeTruthy();
     });
 
     test('walks the full quiz-taking loop: answer every question, submit, and see correct results', async () => {
@@ -137,6 +180,12 @@ describe('TakeQuizScreen', () => {
 
         expect(await screen.findByTestId('take-quiz-score-summary')).toHaveTextContent('Score: 3 / 3');
         expect(screen.getAllByText('✓ Correct')).toHaveLength(3);
+        expect(screen.getByRole('header', { name: 'Quiz Results' })).toBeTruthy();
+
+        const firstResultCard = screen.getByTestId('take-quiz-result-0');
+        expect(firstResultCard.props.accessible).toBe(true);
+        expect(firstResultCard.props.accessibilityLabel).toContain('Question 1');
+        expect(firstResultCard.props.accessibilityLabel).toContain('Correct');
     });
 
     test('the results screen is scrollable, so the Accept/Retake buttons stay reachable', async () => {

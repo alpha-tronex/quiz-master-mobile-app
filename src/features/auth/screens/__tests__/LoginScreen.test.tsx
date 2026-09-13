@@ -108,9 +108,10 @@ describe('LoginScreen', () => {
         await user.type(screen.getByTestId('login-pass-input'), 'wrongpass');
         await user.press(screen.getByTestId('login-submit-button'));
 
-        expect(await screen.findByTestId('login-error-banner')).toHaveTextContent(
-            'Invalid username or password'
-        );
+        const errorBanner = await screen.findByTestId('login-error-banner');
+        expect(errorBanner).toHaveTextContent('Invalid username or password');
+        expect(errorBanner.props.accessibilityRole).toBe('alert');
+        expect(errorBanner.props.accessibilityLiveRegion).toBe('polite');
     });
 
     test('the password field hides its value by default and reveals it via the eye icon', async () => {

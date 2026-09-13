@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background
     },
     rowSelected: {
-        borderColor: colors.primary
+        borderColor: colors.primaryText
     },
     pressed: {
         opacity: 0.7
@@ -81,13 +81,13 @@ const styles = StyleSheet.create({
         borderRadius: radii.pill
     },
     indicatorSelected: {
-        borderColor: colors.primary
+        borderColor: colors.primaryText
     },
     dot: {
         width: 14,
         height: 14,
         borderRadius: radii.sm / 2,
-        backgroundColor: colors.primary
+        backgroundColor: colors.primaryText
     },
     radioDot: {
         borderRadius: radii.pill

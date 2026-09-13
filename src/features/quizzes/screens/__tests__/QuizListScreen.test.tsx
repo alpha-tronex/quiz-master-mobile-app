@@ -22,6 +22,14 @@ afterEach(() => {
 });
 
 describe('QuizListScreen', () => {
+    test('renders the title as a header for screen readers', async () => {
+        useQuizzesMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+
+        await renderScreen();
+
+        expect(screen.getByRole('header', { name: 'Quizzes' })).toBeTruthy();
+    });
+
     test('shows a loading state while quizzes are pending', async () => {
         useQuizzesMock.mockReturnValue({ isPending: true, isError: false });
 
@@ -31,11 +39,34 @@ describe('QuizListScreen', () => {
     });
 
     test('shows an error message when the quizzes fail to load', async () => {
-        useQuizzesMock.mockReturnValue({ isPending: false, isError: true, error: { message: 'Network error' } });
+        useQuizzesMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch: jest.fn(),
+            isRefetching: false
+        });
 
         await renderScreen();
 
         expect(screen.getByTestId('quiz-list-error')).toHaveTextContent('Network error');
+    });
+
+    test('retries the query when Retry is pressed on the error state', async () => {
+        const refetch = jest.fn();
+        useQuizzesMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            refetch,
+            isRefetching: false
+        });
+        const user = userEvent.setup();
+        await renderScreen();
+
+        await user.press(screen.getByTestId('quiz-list-retry-button'));
+
+        expect(refetch).toHaveBeenCalledTimes(1);
     });
 
     test('shows an empty state when there are no quizzes', async () => {
@@ -62,7 +93,12 @@ describe('QuizListScreen', () => {
         expect(screen.getByText('General Knowledge')).toBeTruthy();
         expect(screen.getByText('Web Basics')).toBeTruthy();
 
-        await user.press(screen.getByTestId('quiz-list-item-2'));
+        const item = screen.getByTestId('quiz-list-item-2');
+        expect(item.props.accessibilityRole).toBe('button');
+        expect(item.props.accessibilityLabel).toBe('Web Basics quiz');
+        expect(item.props.accessibilityHint).toBe('Opens this quiz');
+
+        await user.press(item);
 
         await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('TakeQuiz', { quizId: 2 }));
     });

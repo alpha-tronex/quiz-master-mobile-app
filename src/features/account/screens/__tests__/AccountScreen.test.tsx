@@ -59,7 +59,7 @@ describe('AccountScreen', () => {
     test('renders the title and pre-fills every field from the logged-in user', async () => {
         await render(<AccountScreen />);
 
-        expect(screen.getByText('Account')).toBeTruthy();
+        expect(screen.getByRole('header', { name: 'Account' })).toBeTruthy();
         expect(screen.getByTestId('account-fname-input').props.value).toBe('Ada');
         expect(screen.getByTestId('account-lname-input').props.value).toBe('Lovelace');
         expect(screen.getByTestId('account-email-input').props.value).toBe('ada@example.com');
@@ -132,7 +132,10 @@ describe('AccountScreen', () => {
         });
         await render(<AccountScreen />);
 
-        expect(screen.getByTestId('account-error-banner')).toHaveTextContent('Update failed');
+        const errorBanner = screen.getByTestId('account-error-banner');
+        expect(errorBanner).toHaveTextContent('Update failed');
+        expect(errorBanner.props.accessibilityRole).toBe('alert');
+        expect(errorBanner.props.accessibilityLiveRegion).toBe('polite');
     });
 
     test('pressing Log out clears the session', async () => {

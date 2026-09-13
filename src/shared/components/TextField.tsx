@@ -43,7 +43,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
                 <TextInput
                     ref={ref}
                     testID={testID}
-                    accessibilityLabel={label}
+                    accessibilityLabel={hasError && label ? `${label}, ${error}` : label}
                     placeholderTextColor={colors.textMuted}
                     style={[styles.input, isPassword && styles.inputWithToggle, hasError && styles.inputError]}
                     secureTextEntry={resolvedSecureTextEntry}
@@ -104,6 +104,6 @@ const styles = StyleSheet.create({
     error: {
         marginTop: spacing.xs,
         fontSize: typography.fontSize.xs,
-        color: colors.danger
+        color: colors.dangerText
     }
 });

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Button, TextField } from '../../../shared/components';
+import { Banner, Button, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { validateForm, fieldErrorMap } from '../../../shared/validation';
 import { useLogin } from '../hooks/useLogin';
@@ -67,9 +67,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Text style={styles.title} accessibilityRole="header">Log in</Text>
 
                 {login.isError ? (
-                    <Text style={styles.errorBanner} testID="login-error-banner">
-                        {login.error.message}
-                    </Text>
+                    <Banner message={login.error.message} variant="error" testID="login-error-banner" />
                 ) : null}
 
                 <TextField
@@ -133,7 +131,7 @@ const styles = StyleSheet.create({
     appName: {
         fontSize: typography.fontSize.xl,
         fontWeight: typography.fontWeight.bold,
-        color: colors.primary,
+        color: colors.primaryText,
         marginBottom: spacing.sm,
         textAlign: 'center'
     },
@@ -144,15 +142,9 @@ const styles = StyleSheet.create({
         marginBottom: spacing.lg,
         textAlign: 'center'
     },
-    errorBanner: {
-        color: colors.danger,
-        fontSize: typography.fontSize.sm,
-        marginBottom: spacing.md,
-        textAlign: 'center'
-    },
     link: {
         marginTop: spacing.md,
-        color: colors.primary,
+        color: colors.primaryText,
         fontSize: typography.fontSize.sm,
         textAlign: 'center'
     }

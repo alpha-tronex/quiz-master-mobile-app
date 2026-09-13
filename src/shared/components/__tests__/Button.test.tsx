@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, userEvent } from '@testing-library/react-native';
 import { Button } from '../Button';
+import { colors } from '../../theme';
 
 describe('Button', () => {
     test('renders the label', async () => {
@@ -55,5 +56,25 @@ describe('Button', () => {
         const label = screen.getByText('Previous');
         expect(label.props.numberOfLines).toBe(1);
         expect(label.props.adjustsFontSizeToFit).toBe(true);
+    });
+
+    // The teal `primary` background only manages ~2.4:1 contrast with white
+    // text (below the 4.5:1 AA minimum for the bold label), so the primary
+    // variant's label/spinner use the dark `secondary` navy instead — see
+    // the WCAG contrast audit in theme.ts.
+    test('uses the dark secondary color for the primary variant label (contrast fix)', async () => {
+        await render(<Button label="Register" onPress={jest.fn()} variant="primary" />);
+
+        const label = screen.getByText('Register');
+        const flatStyle = [label.props.style].flat();
+        expect(flatStyle).toEqual(expect.arrayContaining([expect.objectContaining({ color: colors.secondary })]));
+    });
+
+    test('uses the darkened primaryText token for the outline variant label', async () => {
+        await render(<Button label="Cancel" onPress={jest.fn()} variant="outline" />);
+
+        const label = screen.getByText('Cancel');
+        const flatStyle = [label.props.style].flat();
+        expect(flatStyle).toEqual(expect.arrayContaining([expect.objectContaining({ color: colors.primaryText })]));
     });
 });

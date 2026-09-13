@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Button, Card } from '../../../shared/components';
+import { Button, Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { useQuiz } from '../hooks/useQuiz';
@@ -168,9 +168,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
     if (quizQuery.isPending) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centered} testID="take-quiz-loading">
-                    <ActivityIndicator color={colors.primary} size="large" />
-                </View>
+                <LoadingState testID="take-quiz-loading" />
             </SafeAreaView>
         );
     }
@@ -178,11 +176,13 @@ export function TakeQuizScreen({ route, navigation }: Props) {
     if (quizQuery.isError) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centered}>
-                    <Text style={styles.errorText} testID="take-quiz-error">
-                        {quizQuery.error.message}
-                    </Text>
-                </View>
+                <ErrorState
+                    message={quizQuery.error.message}
+                    testID="take-quiz-error"
+                    onRetry={() => quizQuery.refetch()}
+                    retrying={quizQuery.isRefetching}
+                    retryTestID="take-quiz-retry-button"
+                />
             </SafeAreaView>
         );
     }
@@ -194,9 +194,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
     if (!questions) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centered} testID="take-quiz-loading">
-                    <ActivityIndicator color={colors.primary} size="large" />
-                </View>
+                <LoadingState testID="take-quiz-loading" />
             </SafeAreaView>
         );
     }
@@ -206,9 +204,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
     if (questions.length === 0) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.centered}>
-                    <Text style={styles.subtitle}>Please check again later. Thanks.</Text>
-                </View>
+                <EmptyState message="Please check again later. Thanks." testID="take-quiz-empty" />
             </SafeAreaView>
         );
     }
@@ -219,24 +215,31 @@ export function TakeQuizScreen({ route, navigation }: Props) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView testID="take-quiz-results-scroll" style={styles.scrollView} contentContainerStyle={styles.content}>
-                    <Text style={styles.quizTitle}>Quiz Results</Text>
+                    <Text style={styles.quizTitle} accessibilityRole="header">Quiz Results</Text>
                     <Text style={styles.quizSubtitle}>{quiz.title}</Text>
 
                     {questions.map((question, index) => {
                         const correct = isQuestionCorrect(question);
+                        const yourSelections =
+                            (question.selection ?? []).map((value) => getAnswerText(question, value)).join(', ') || '—';
+                        const correctAnswers = question.correct.map((value) => getAnswerText(question, value)).join(', ');
+                        const statusLabel = correct ? 'Correct' : 'Incorrect';
+
                         return (
-                            <Card key={question.questionNum} style={styles.resultCard} testID={`take-quiz-result-${index}`}>
+                            <Card
+                                key={question.questionNum}
+                                style={styles.resultCard}
+                                testID={`take-quiz-result-${index}`}
+                                accessible
+                                accessibilityLabel={`Question ${index + 1}: ${question.question}. Your selection: ${yourSelections}. Correct answer: ${correctAnswers}. ${statusLabel}.`}
+                            >
                                 <Text style={styles.question}>{`Question ${index + 1}: ${question.question}`}</Text>
 
                                 <Text style={styles.resultLabel}>Your selection(s):</Text>
-                                <Text style={styles.resultValue}>
-                                    {(question.selection ?? []).map((value) => getAnswerText(question, value)).join(', ') || '—'}
-                                </Text>
+                                <Text style={styles.resultValue}>{yourSelections}</Text>
 
                                 <Text style={styles.resultLabel}>Correct answer(s):</Text>
-                                <Text style={styles.resultValue}>
-                                    {question.correct.map((value) => getAnswerText(question, value)).join(', ')}
-                                </Text>
+                                <Text style={styles.resultValue}>{correctAnswers}</Text>
 
                                 <Text style={[styles.resultStatus, correct ? styles.correct : styles.incorrect]}>
                                     {correct ? '✓ Correct' : '✗ Incorrect'}
@@ -279,7 +282,7 @@ export function TakeQuizScreen({ route, navigation }: Props) {
     return (
         <SafeAreaView style={styles.safeArea}>
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-                <Text style={styles.quizTitle}>{quiz.title}</Text>
+                <Text style={styles.quizTitle} accessibilityRole="header">{quiz.title}</Text>
 
                 <Card style={styles.card}>
                     <Text style={styles.question} accessibilityRole="header">
@@ -347,22 +350,6 @@ const styles = StyleSheet.create({
     content: {
         padding: spacing.lg
     },
-    centered: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing.lg
-    },
-    errorText: {
-        fontSize: typography.fontSize.md,
-        color: colors.danger,
-        textAlign: 'center'
-    },
-    subtitle: {
-        fontSize: typography.fontSize.md,
-        color: colors.textMuted,
-        textAlign: 'center'
-    },
     quizTitle: {
         fontSize: typography.fontSize.xl,
         fontWeight: typography.fontWeight.bold,
@@ -422,10 +409,10 @@ const styles = StyleSheet.create({
         marginTop: spacing.sm
     },
     correct: {
-        color: colors.success
+        color: colors.successText
     },
     incorrect: {
-        color: colors.danger
+        color: colors.dangerText
     },
     scoreSummary: {
         fontSize: typography.fontSize.lg,

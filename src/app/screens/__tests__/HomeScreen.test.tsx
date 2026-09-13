@@ -7,3 +7,9 @@ test('HomeScreen renders a welcome message', async () => {
 
     expect(screen.getByText('Welcome to Quiz Master')).toBeTruthy();
 });
+
+test('HomeScreen renders its title as a header for screen readers', async () => {
+    await render(<HomeScreen />);
+
+    expect(screen.getByRole('header', { name: 'Welcome to Quiz Master' })).toBeTruthy();
+});

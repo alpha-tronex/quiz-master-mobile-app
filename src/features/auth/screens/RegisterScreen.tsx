@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Button, Card, TextField } from '../../../shared/components';
+import { Banner, Button, Card, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { validateForm, fieldErrorMap } from '../../../shared/validation';
 import { useRegister } from '../hooks/useRegister';
@@ -105,12 +105,10 @@ export function RegisterScreen({ navigation }: Props) {
                 <Text style={styles.title} accessibilityRole="header">Register</Text>
 
                 {register.isError ? (
-                    <Text style={styles.errorBanner} testID="register-error-banner">
-                        {register.error.message}
-                    </Text>
+                    <Banner message={register.error.message} variant="error" testID="register-error-banner" />
                 ) : null}
 
-                <Text style={styles.sectionTitle}>Required information</Text>
+                <Text style={styles.sectionTitle} accessibilityRole="header">Required information</Text>
                 <Card testID="register-required-section" style={styles.requiredCard}>
                     <TextField
                         testID="register-uname-input"
@@ -153,7 +151,7 @@ export function RegisterScreen({ navigation }: Props) {
                     />
                 </Card>
 
-                <Text style={styles.sectionTitle}>Optional information</Text>
+                <Text style={styles.sectionTitle} accessibilityRole="header">Optional information</Text>
                 <Card testID="register-optional-section" style={styles.optionalCard}>
                     <TextField
                         ref={fnameRef}
@@ -262,19 +260,13 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
         marginBottom: spacing.lg
     },
-    errorBanner: {
-        color: colors.danger,
-        fontSize: typography.fontSize.sm,
-        marginBottom: spacing.md,
-        textAlign: 'center'
-    },
     submitButton: {
         marginTop: spacing.xs
     },
     link: {
         marginTop: spacing.md,
         marginBottom: spacing.xl,
-        color: colors.primary,
+        color: colors.primaryText,
         fontSize: typography.fontSize.sm,
         textAlign: 'center'
     }

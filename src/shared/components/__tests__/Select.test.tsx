@@ -45,4 +45,17 @@ describe('Select', () => {
 
         expect(screen.getByText('State is required')).toBeTruthy();
     });
+
+    test('marks the currently selected option with accessibilityState and an accessibilityLabel', async () => {
+        const user = userEvent.setup();
+        await render(
+            <Select label="State" value="NY" onValueChange={jest.fn()} options={options} testID="state" />
+        );
+
+        await user.press(screen.getByTestId('state'));
+
+        expect(screen.getByTestId('state-option-NY').props.accessibilityState).toEqual({ selected: true });
+        expect(screen.getByTestId('state-option-CA').props.accessibilityState).toEqual({ selected: false });
+        expect(screen.getByTestId('state-option-CA').props.accessibilityLabel).toBe('California');
+    });
 });

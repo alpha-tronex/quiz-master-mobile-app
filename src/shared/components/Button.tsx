@@ -46,7 +46,7 @@ export function Button({
             ]}
         >
             {loading ? (
-                <ActivityIndicator color={variant === 'outline' ? colors.primary : colors.textInverse} />
+                <ActivityIndicator color={spinnerColorByVariant[variant]} />
             ) : (
                 // numberOfLines/adjustsFontSizeToFit stop a long label from wrapping onto a
                 // second line when the button is squeezed (e.g. three buttons sharing a row) —
@@ -87,13 +87,27 @@ const styles = StyleSheet.create({
 const variantStyles: Record<ButtonVariant, ViewStyle> = {
     primary: { backgroundColor: colors.primary },
     secondary: { backgroundColor: colors.secondary },
-    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary },
+    // `colors.primary` on its own only manages ~2.4:1 as a 1px border,
+    // still under the 3:1 non-text minimum; `primaryText` clears it.
+    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primaryText },
     danger: { backgroundColor: colors.danger }
 };
 
+// White text on the teal `primary` background is only ~2.4:1 — well under
+// the 4.5:1 AA minimum for the bold button label — so the primary variant
+// uses the dark `secondary` navy instead, matching the web app's own
+// button styling. `danger` keeps white text; `#dc3545` is dark enough
+// to clear 4.5:1 with white.
 const labelVariantStyles: Record<ButtonVariant, { color: string }> = {
-    primary: { color: colors.textInverse },
+    primary: { color: colors.secondary },
     secondary: { color: colors.textInverse },
-    outline: { color: colors.primary },
+    outline: { color: colors.primaryText },
     danger: { color: colors.textInverse }
+};
+
+const spinnerColorByVariant: Record<ButtonVariant, string> = {
+    primary: colors.secondary,
+    secondary: colors.textInverse,
+    outline: colors.primaryText,
+    danger: colors.textInverse
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Select, TextField } from '../../../shared/components';
+import { Banner, Button, Select, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { validateForm, fieldErrorMap } from '../../../shared/validation';
 import { useAuthStore } from '../../../core/auth/authStore';
@@ -119,14 +119,10 @@ export function AccountScreen() {
                 <Text style={styles.title} accessibilityRole="header">Account</Text>
 
                 {updateAccount.isError ? (
-                    <Text style={styles.errorBanner} testID="account-error-banner">
-                        {updateAccount.error.message}
-                    </Text>
+                    <Banner message={updateAccount.error.message} variant="error" testID="account-error-banner" />
                 ) : null}
                 {justSaved ? (
-                    <Text style={styles.successBanner} testID="account-success-banner">
-                        Account updated
-                    </Text>
+                    <Banner message="Account updated" variant="success" testID="account-success-banner" />
                 ) : null}
 
                 <TextField
@@ -162,7 +158,7 @@ export function AccountScreen() {
                     keyboardType="phone-pad"
                 />
 
-                <Text style={styles.sectionTitle}>Address</Text>
+                <Text style={styles.sectionTitle} accessibilityRole="header">Address</Text>
 
                 <TextField
                     testID="account-street1-input"
@@ -260,18 +256,6 @@ const styles = StyleSheet.create({
         color: colors.text,
         marginBottom: spacing.sm,
         marginTop: spacing.sm
-    },
-    errorBanner: {
-        color: colors.danger,
-        fontSize: typography.fontSize.sm,
-        marginBottom: spacing.md,
-        textAlign: 'center'
-    },
-    successBanner: {
-        color: colors.success,
-        fontSize: typography.fontSize.sm,
-        marginBottom: spacing.md,
-        textAlign: 'center'
     },
     saveButton: {
         marginTop: spacing.md
