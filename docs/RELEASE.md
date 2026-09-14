@@ -6,10 +6,46 @@ Fastlane, no automated release pipeline: a person runs each command and
 watches the result before moving to the next step. Covers `PHASED_DELIVERY.md`
 Phase 6: regression pass, TestFlight/Play internal testing, staged rollout.
 
-## One-time setup
+## Backend
 
-These happen once, outside this repo, before the first real release. None of
-them can be done from this sandbox (no network/store credentials).
+`EXPO_PUBLIC_API_URL` is set to `https://quizmaster.alphatronex.com` for the
+`preview` and `production` build profiles in `eas.json` — confirmed live
+(the Hetzner migration documented in `quizzes/DEPLOY.md` has gone out; the
+domain serves the app and the `quizmaster-app`/`quizmaster-mongo` containers
+are listed as live in `hetzner-infra/hetzner.md`). `JWT_SECRET` lives in
+`server/.env.production` on the box (git-ignored) per Phase 0 — the server
+serving traffic at all confirms it's set, since Phase 0 removed the
+no-secret startup fallback.
+
+The `development` profile intentionally has no `env` override: dev-client
+builds still run their JS through Metro, so `EXPO_PUBLIC_API_URL` there
+comes from your local `.env.local` (see `src/core/config.ts`), not from
+`eas.json`.
+
+## One-time setup (dev-account / internal testing)
+
+These happen once, outside this repo, before the first build lands on a
+physical device. None of them can be run from this sandbox — they need an
+interactive `eas login` with your Apple ID and Expo account.
+
+```bash
+eas login                 # your Expo account
+eas init                  # links this project, populates extra.eas.projectId in app.json
+eas device:create         # registers a tester's iOS device UDID for ad-hoc signing
+                           # (prints/emails a registration link — open it on the device itself)
+eas build --profile preview --platform ios
+```
+
+The first `eas build` for iOS will prompt to log into your Apple Developer
+account and either reuse or generate a distribution certificate + ad-hoc
+provisioning profile scoped to the UDIDs registered above — EAS manages all
+of this, no manual Xcode signing needed. The resulting build installs
+directly (via a QR code / link EAS prints) without going through TestFlight.
+
+## One-time setup (store submission)
+
+Only needed once you're moving past internal/dev-account testing toward a
+public release:
 
 1. **Apple Developer Program** account, and an App Store Connect app record
    for bundle ID `com.alphatronex.quizmaster` (matches `ios.bundleIdentifier`
@@ -20,9 +56,7 @@ them can be done from this sandbox (no network/store credentials).
    `com.alphatronex.quizmaster` (matches `android.package` in `app.json`).
    No `submit` block is used for Android here, same as the reference app —
    `.aab` uploads go through the Play Console UI by hand.
-3. **`eas init`** (run from the project root) to create/link an EAS project
-   and populate `extra.eas.projectId` in `app.json`. Not set yet.
-4. Store listing content lives in `store-assets/` (`store-copy.md`,
+3. Store listing content lives in `store-assets/` (`store-copy.md`,
    `privacy-policy.md`) — fill in real screenshots/assets there before
    submitting either listing. The privacy policy needs to be hosted at a
    public URL (both stores require this) before submission.
