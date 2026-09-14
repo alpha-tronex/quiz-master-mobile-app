@@ -61,6 +61,10 @@ Incremental delivery, each phase producing something runnable/testable rather th
 
 *Exit criteria: app is live/available to real users on both platforms.*
 
+See `RELEASE.md` for the step-by-step runbook (manual, EAS-CLI-driven — no
+CI/CD — matching the pattern used for this developer's other shipped Expo
+app).
+
 ## Sequencing notes
 - Phase 0 blocks everything else that touches quiz storage or auth — do it first, not in parallel.
 - Phases 1–2 can start once Phase 0's auth changes (token lifetime, CORS) are in place, even before the quiz-storage migration finishes.

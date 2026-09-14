@@ -7,9 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.alphatronex.quizmaster"
     },
     "android": {
+      "package": "com.alphatronex.quizmaster",
       "adaptiveIcon": {
         "backgroundColor": "#1abc9c",
         "foregroundImage": "./assets/android-icon-foreground.png",

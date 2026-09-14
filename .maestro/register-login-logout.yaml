@@ -12,13 +12,13 @@
 # right uniqueness/reset strategy depends on how the staging backend ends
 # up being provisioned (not yet decided — see Phase 6).
 #
-# appId is a placeholder: app.json doesn't set ios.bundleIdentifier or
-# android.package yet (that lands with EAS Build config in Phase 6) — update
-# this to match once it does.
+# appId matches app.json's ios.bundleIdentifier / android.package
+# (set in Phase 6 — see docs/RELEASE.md).
 #
 # NOT executed in this sandbox: Maestro needs a real iOS Simulator or
 # Android emulator with the app installed and a reachable backend, neither
-# of which this environment has. See docs/TESTING.md, "End-to-end".
+# of which this environment has. See docs/TESTING.md, "End-to-end", and
+# docs/RELEASE.md's regression-pass step for where this runs before a release.
 appId: com.alphatronex.quizmaster
 ---
 - launchApp:
