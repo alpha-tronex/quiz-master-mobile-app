@@ -20,5 +20,12 @@
         "EXPO_PUBLIC_API_URL": "https://quizmaster.alphatronex.com"
       }
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6812153773"
+      }
+    }
   }
 }
