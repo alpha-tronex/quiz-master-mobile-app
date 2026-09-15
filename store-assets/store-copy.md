@@ -4,7 +4,11 @@
 
 ## App Store (iOS)
 
-**Name:** Quiz Master
+**Name:** Quiz Master by Alphatronex
+
+_(App Store Connect record created under this name — "Quiz Master" alone was
+already taken by another listing. `app.json`'s internal `expo.name` stays
+"Quiz Master"; only the public store listing name differs.)_
 
 **Subtitle:** Take quizzes, track your scores
 

@@ -58,8 +58,19 @@ public release:
    `.aab` uploads go through the Play Console UI by hand.
 3. Store listing content lives in `store-assets/` (`store-copy.md`,
    `privacy-policy.md`) — fill in real screenshots/assets there before
-   submitting either listing. The privacy policy needs to be hosted at a
-   public URL (both stores require this) before submission.
+   submitting either listing (content is drafted; screenshots still needed
+   from a real build).
+4. The privacy policy needs to be hosted at a public URL (both stores
+   require this) before submission. A styled HTML version lives at
+   `hetzner-infra/splash/quizmaster-privacy.html` (source of truth is
+   `store-assets/privacy-policy.md` — keep them in sync). Deploy it with:
+   ```bash
+   rsync -a splash/ hetzner:/var/www/alphatronex/
+   ```
+   from the `hetzner-infra` repo — it'll be live at
+   `https://alphatronex.com/quizmaster-privacy.html`. Use that URL in both
+   App Store Connect's "Privacy Policy URL" field and the Play Console's
+   Data Safety / App content section.
 
 ## Every release
 
