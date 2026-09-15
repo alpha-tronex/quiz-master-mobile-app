@@ -33,10 +33,34 @@ export function MainTabs() {
                 tabBarInactiveTintColor: colors.textMuted
             }}
         >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Quizzes" component={QuizzesStack} />
-            <Tab.Screen name="History" component={HistoryScreen} />
-            <Tab.Screen name="Account" component={AccountScreen} />
+            <Tab.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{ tabBarButtonTestID: 'tab-home' }}
+            />
+            <Tab.Screen
+                name="Quizzes"
+                component={QuizzesStack}
+                options={{ tabBarButtonTestID: 'tab-quizzes' }}
+            />
+            <Tab.Screen
+                name="History"
+                component={HistoryScreen}
+                options={{ tabBarButtonTestID: 'tab-history' }}
+            />
+            <Tab.Screen
+                name="Account"
+                component={AccountScreen}
+                // On iOS, the default tab bar folds each tab's visible label
+                // into a composite accessibilityLabel on the tab button itself
+                // (e.g. "Account, tab, 4 of 4" — see BottomTabBar.tsx), so
+                // there's no standalone "Account" text node for automation
+                // tools that search by visible text. An explicit testID gives
+                // Maestro (and anything else) a stable, unambiguous target —
+                // same convention already used for every other interactive
+                // element in this app (register-*-input, account-logout-button, etc.).
+                options={{ tabBarButtonTestID: 'tab-account' }}
+            />
         </Tab.Navigator>
     );
 }

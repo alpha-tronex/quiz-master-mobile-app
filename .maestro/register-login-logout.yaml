@@ -26,20 +26,21 @@ appId: com.alphatronex.quizmaster
 - assertVisible: "Log in"
 
 # Register
+#
+# Field order below intentionally matches the screen's actual top-to-bottom
+# layout (Required card: uname, pass, confirmPass; Optional card: fname,
+# lname, email — phone is skipped since it's optional and unvalidated when
+# blank). Filling fields out of visual order (e.g. jumping to email in the
+# Optional card, then back up to pass in the Required card) forces the
+# ScrollView to animate in alternating directions between taps; a tap that
+# lands mid-scroll can miss its target and leave focus on the previous
+# field, so `inputText` silently types into the wrong input. Keep this flow
+# monotonically top-to-bottom to avoid reintroducing that race.
 - tapOn: "Don't have an account? Register"
 - assertVisible: "Register"
 - tapOn:
-    id: "register-fname-input"
-- inputText: "Maestro"
-- tapOn:
-    id: "register-lname-input"
-- inputText: "Tester"
-- tapOn:
     id: "register-uname-input"
 - inputText: "${MAESTRO_TEST_UNAME}"
-- tapOn:
-    id: "register-email-input"
-- inputText: "${MAESTRO_TEST_EMAIL}"
 - tapOn:
     id: "register-pass-input"
 - inputText: "${MAESTRO_TEST_PASS}"
@@ -47,16 +48,81 @@ appId: com.alphatronex.quizmaster
     id: "register-confirm-pass-input"
 - inputText: "${MAESTRO_TEST_PASS}"
 - tapOn:
+    id: "register-fname-input"
+- inputText: "Maestro"
+- tapOn:
+    id: "register-lname-input"
+- inputText: "Tester"
+- tapOn:
+    id: "register-email-input"
+- inputText: "${MAESTRO_TEST_EMAIL}"
+- hideKeyboard
+- tapOn:
     id: "register-submit-button"
 - assertVisible: "Welcome to Quiz Master"
 
 # Log out -> back on Login
-- tapOn: "Account"
+#
+# Tapped by id, not visible text: on iOS, React Navigation's default bottom
+# tab bar folds each tab's label into a composite accessibilityLabel on the
+# tab button itself (e.g. "Account, tab, 4 of 4" — see
+# node_modules/@react-navigation/bottom-tabs/src/views/BottomTabBar.tsx), so
+# there's no standalone "Account" text node left for a text-based selector
+# to find, even though the tab is visible and tappable. `tabBarButtonTestID`
+# (set in MainTabs.tsx) sidesteps that entirely.
+#
+# `scrollUntilVisible` (not a plain `tapOn`) before the logout tap: the
+# Account screen is one long ScrollView — name/email/phone, then the full
+# seven-part address block including the State/Country dropdowns — with
+# "Log out" as the very last element (see AccountScreen.tsx). It's below the
+# fold on first landing on the tab, so a direct `tapOn` intermittently misses
+# it depending on how far Maestro's own implicit auto-scroll gets.
+- waitForAnimationToEnd
+- tapOn:
+    id: "tab-account"
+- scrollUntilVisible:
+    element:
+        id: "account-logout-button"
+    direction: DOWN
 - tapOn:
     id: "account-logout-button"
 - assertVisible: "Log in"
 
 # Log back in with the same credentials -> Home again
+#
+# No `hideKeyboard` before this submit tap (unlike register-submit-button).
+# An earlier revision had one here, added to work around
+# "login-submit-button" sitting underneath the keyboard — but that occlusion
+# bug is now fixed properly in LoginScreen.tsx via `KeyboardAvoidingView`
+# (`behavior="padding"` shrinks the content area as the keyboard rises,
+# keeping the button above it instead of under it), so the YAML workaround is
+# no longer needed.
+#
+# It also turned out to be actively harmful: `login-pass-input` has
+# `returnKeyType="go"` with `onSubmitEditing={handleSubmit}`, and on iOS
+# Maestro's `hideKeyboard` dismisses the keyboard by invoking its own
+# return/"Go" key rather than tapping outside the field — which fires
+# `onSubmitEditing` itself. That submitted the login (and, once it resolved,
+# navigated LoginScreen away to Home) *before* the explicit
+# `tapOn: login-submit-button` step below ever ran, so that step then failed
+# with "Element not found" — not because the button was covered, but because
+# the whole screen was already gone by then. Confirmed live on the simulator:
+# dismissing the leading "Not Now" landed directly on the Home screen, with
+# no Login screen in between. Removing `hideKeyboard` here makes the explicit
+# button tap the single, sole trigger for submission again, and — as a bonus
+# — means this step now actually exercises the real Login button rather than
+# the keyboard's "Go" key.
+#
+# The remaining `optional: true` "Not Now" tap dismisses iOS's system "Save
+# Password?" Keychain prompt, which only shows up on this explicit
+# username+password login (not on registration — the strong-password flow
+# apparently doesn't re-offer to save what it just suggested). `optional:
+# true` is a no-op on runs where it doesn't appear. This is a system alert,
+# not app UI, so it can't be fixed via `textContentType` or any other in-app
+# change — see the (still-worthwhile, defensive) `textContentType="oneTimeCode"`
+# note on `login-pass-input` in LoginScreen.tsx for why that alone wasn't
+# enough. `waitForAnimationToEnd` after it gives the alert's exit animation
+# time to finish before the next hierarchy query.
 - tapOn:
     id: "login-uname-input"
 - inputText: "${MAESTRO_TEST_UNAME}"
@@ -65,10 +131,20 @@ appId: com.alphatronex.quizmaster
 - inputText: "${MAESTRO_TEST_PASS}"
 - tapOn:
     id: "login-submit-button"
+- tapOn:
+    text: "Not Now"
+    optional: true
+- waitForAnimationToEnd
 - assertVisible: "Welcome to Quiz Master"
 
 # Log out again, leaving no session behind
-- tapOn: "Account"
+- waitForAnimationToEnd
+- tapOn:
+    id: "tab-account"
+- scrollUntilVisible:
+    element:
+        id: "account-logout-button"
+    direction: DOWN
 - tapOn:
     id: "account-logout-button"
 - assertVisible: "Log in"

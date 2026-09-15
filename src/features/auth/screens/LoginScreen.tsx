@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Banner, Button, TextField } from '../../../shared/components';
@@ -62,7 +62,22 @@ export function LoginScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
+            {/*
+              * `container`'s content is vertically centered with no
+              * ScrollView (unlike RegisterScreen), so without this the
+              * keyboard opening doesn't reflow anything below it — it just
+              * overlaps whatever was already there. On this screen that's
+              * the "Log in" button: the software keyboard is the topmost
+              * view at that point on screen, so a tap on the button while
+              * the keyboard is still up is delivered to the keyboard
+              * instead, and `handleSubmit` never fires. `padding` behavior
+              * (the standard RN pattern for this) shrinks the content area
+              * as the keyboard rises, keeping the button above it.
+              */}
+            <KeyboardAvoidingView
+                style={styles.container}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
                 <Text style={styles.appName} testID="login-app-name">{APP_NAME}</Text>
                 <Text style={styles.title} accessibilityRole="header">Log in</Text>
 
@@ -92,6 +107,19 @@ export function LoginScreen({ navigation }: Props) {
                     onBlur={markTouched('pass')}
                     error={fieldError('pass')}
                     isPassword
+                    // Same as RegisterScreen's pass/confirmPass fields, and
+                    // for the same reason: a bare `secureTextEntry` field
+                    // with no `textContentType` reads as a real password to
+                    // iOS. Doesn't fully suppress the system "Save
+                    // Password?" Keychain prompt on this screen, though —
+                    // confirmed live that it still appears on login (just
+                    // not on registration) and covers login-submit-button
+                    // entirely, so `.maestro/register-login-logout.yaml`
+                    // dismisses it ("Not Now") as a system alert outside
+                    // this component's control, rather than relying on this
+                    // prop alone. Kept here regardless since it's still
+                    // strictly better than leaving the default on.
+                    textContentType="oneTimeCode"
                     returnKeyType="go"
                     onSubmitEditing={handleSubmit}
                 />
@@ -112,7 +140,7 @@ export function LoginScreen({ navigation }: Props) {
                 >
                     Don&apos;t have an account? Register
                 </Text>
-            </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }

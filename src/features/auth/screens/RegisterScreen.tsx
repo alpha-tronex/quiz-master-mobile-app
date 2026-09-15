@@ -132,6 +132,18 @@ export function RegisterScreen({ navigation }: Props) {
                         onBlur={markTouched('pass')}
                         error={fieldError('pass')}
                         isPassword
+                        // Suppresses iOS's "Strong Password" AutoFill suggestion
+                        // bar, which this pass+confirmPass pair otherwise
+                        // triggers automatically (iOS infers a "new account
+                        // password" context from two adjacent secure fields,
+                        // even with no explicit textContentType at all). That
+                        // bar inserts itself above the keyboard mid-typing,
+                        // shifting the layout and dropping/misrouting
+                        // keystrokes into whichever field ends up under the
+                        // finger/cursor next — reproduced via Maestro as
+                        // "MaestroTest!2026" landing mostly in confirmPass
+                        // while pass captured a single character.
+                        textContentType="oneTimeCode"
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => confirmPassRef.current?.focus()}
@@ -145,6 +157,7 @@ export function RegisterScreen({ navigation }: Props) {
                         onBlur={markTouched('confirmPass')}
                         error={fieldError('confirmPass')}
                         isPassword
+                        textContentType="oneTimeCode"
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => fnameRef.current?.focus()}
@@ -161,6 +174,29 @@ export function RegisterScreen({ navigation }: Props) {
                         onChangeText={setFname}
                         onBlur={markTouched('fname')}
                         error={fieldError('fname')}
+                        // `autoCorrect={false}` alone (first attempted fix)
+                        // did NOT resolve this — confirmed live by re-
+                        // registering and inspecting the stored account
+                        // afterward, still corrupted the same way. The real
+                        // cause: with no `textContentType` set at all, iOS
+                        // heuristically infers one from context (this
+                        // field's "First name" accessibility label, sitting
+                        // directly above "Last name"/"Phone"/"Email" — a
+                        // textbook Contacts-autofill form shape) and shows
+                        // its QuickType/Contacts suggestion strip above the
+                        // keyboard. That strip's appearance/dismissal
+                        // intercepts the *next* field's tap before native
+                        // focus actually transfers there, even though
+                        // Maestro's own hierarchy-based tap succeeds — so
+                        // every character meant for lname/email keeps
+                        // landing here instead (registered as
+                        // fname="MaestroyTester maestro.tester9@..." with
+                        // lname/email left blank). `textContentType="none"`
+                        // is Apple's documented way to opt a field out of
+                        // that heuristic entirely, rather than just
+                        // suppressing spellcheck the way `autoCorrect` does.
+                        autoCorrect={false}
+                        textContentType="none"
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => lnameRef.current?.focus()}
@@ -173,6 +209,8 @@ export function RegisterScreen({ navigation }: Props) {
                         onChangeText={setLname}
                         onBlur={markTouched('lname')}
                         error={fieldError('lname')}
+                        autoCorrect={false}
+                        textContentType="none"
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => phoneRef.current?.focus()}
@@ -186,6 +224,7 @@ export function RegisterScreen({ navigation }: Props) {
                         onBlur={markTouched('phone')}
                         error={fieldError('phone')}
                         keyboardType="phone-pad"
+                        textContentType="none"
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => emailRef.current?.focus()}
@@ -200,6 +239,7 @@ export function RegisterScreen({ navigation }: Props) {
                         error={fieldError('email')}
                         autoCapitalize="none"
                         autoCorrect={false}
+                        textContentType="none"
                         keyboardType="email-address"
                         returnKeyType="go"
                         onSubmitEditing={handleSubmit}

@@ -131,6 +131,18 @@ export function AccountScreen() {
                     value={fname}
                     onChangeText={updateField(setFname)}
                     error={fieldErrors.fname}
+                    // See the (revised) comment on RegisterScreen's fname
+                    // field: `autoCorrect={false}` alone does not stop iOS
+                    // from heuristically inferring a Contacts-autofill
+                    // `textContentType` from this field's label and its
+                    // adjacency to Last name/Email/Phone. That inferred type
+                    // is what drives the QuickType/Contacts suggestion strip
+                    // that can intercept a tap meant for the next field.
+                    // `textContentType="none"` opts the field out of that
+                    // heuristic entirely — `autoCorrect` only affects
+                    // spellcheck and doesn't touch it.
+                    autoCorrect={false}
+                    textContentType="none"
                 />
                 <TextField
                     testID="account-lname-input"
@@ -138,6 +150,8 @@ export function AccountScreen() {
                     value={lname}
                     onChangeText={updateField(setLname)}
                     error={fieldErrors.lname}
+                    autoCorrect={false}
+                    textContentType="none"
                 />
                 <TextField
                     testID="account-email-input"
@@ -147,6 +161,7 @@ export function AccountScreen() {
                     error={fieldErrors.email}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    textContentType="none"
                     keyboardType="email-address"
                 />
                 <TextField
@@ -156,6 +171,7 @@ export function AccountScreen() {
                     onChangeText={updateField(setPhone)}
                     error={fieldErrors.phone}
                     keyboardType="phone-pad"
+                    textContentType="none"
                 />
 
                 <Text style={styles.sectionTitle} accessibilityRole="header">Address</Text>
