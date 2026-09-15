@@ -34,6 +34,12 @@
         }
       ],
       "./plugins/withQuotedBundlePhase.js"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ae41f369-6a4b-4ad4-b2c8-98ce68fa4f84"
+      }
+    },
+    "owner": "alpha-tronex"
   }
 }
