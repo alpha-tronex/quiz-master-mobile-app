@@ -84,16 +84,17 @@ describe('HomeScreen', () => {
         expect(refetch).toHaveBeenCalledTimes(1);
     });
 
-    test('shows a generic welcome and an empty state when no quizzes have been completed', async () => {
+    test('shows a generic welcome, no subtitle, and an empty state when no quizzes have been completed', async () => {
         useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
 
         await render(<HomeScreen />);
 
         expect(screen.getByRole('header', { name: 'Welcome to Quiz Master' })).toBeTruthy();
+        expect(screen.queryByTestId('home-subtitle')).toBeNull();
         expect(screen.getByTestId('home-empty')).toHaveTextContent('Pick a quiz from the Quizzes tab to get started.');
     });
 
-    test('greets a signed-in user by first name', async () => {
+    test('greets a signed-in user by first name in a subtitle, leaving the title constant', async () => {
         useAuthStore.setState({
             user: {
                 id: 'u1',
@@ -113,7 +114,8 @@ describe('HomeScreen', () => {
 
         await render(<HomeScreen />);
 
-        expect(screen.getByRole('header', { name: 'Welcome back, Ada!' })).toBeTruthy();
+        expect(screen.getByRole('header', { name: 'Welcome to Quiz Master' })).toBeTruthy();
+        expect(screen.getByTestId('home-subtitle')).toHaveTextContent('Hello, Ada!');
     });
 
     test('renders quizzes-completed and average-score stat cards', async () => {

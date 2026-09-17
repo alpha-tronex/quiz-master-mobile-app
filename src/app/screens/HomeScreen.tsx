@@ -33,13 +33,18 @@ function mostRecent(quizzes: Quiz[]): Quiz {
  * Wrapped in a top-edge-only `SafeAreaView` (matching HistoryScreen,
  * QuizListScreen, etc.) so the title clears the status bar/notch instead
  * of sitting underneath it — the tab bar already handles the bottom edge.
+ *
+ * The title itself stays constant ("Welcome to Quiz Master"); personalization
+ * lives in a `subtitle` line underneath ("Hello, {fname}!"), shown only when
+ * signed in with a name — keeping the two from saying the same thing twice.
  */
 export function HomeScreen() {
     const fname = useAuthStore((state) => state.user?.fname);
     const username = useAuthStore((state) => state.user?.uname ?? '');
     const historyQuery = useQuizHistory(username);
 
-    const greeting = fname ? `Welcome back, ${fname}!` : 'Welcome to Quiz Master';
+    const title = 'Welcome to Quiz Master';
+    const subtitle = fname ? `Hello, ${fname}!` : null;
 
     if (historyQuery.isPending) {
         return (
@@ -69,7 +74,10 @@ export function HomeScreen() {
         return (
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 <View style={styles.container}>
-                    <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
+                    <View style={styles.header}>
+                        <Text style={styles.title} accessibilityRole="header">{title}</Text>
+                        {subtitle ? <Text style={styles.subtitle} testID="home-subtitle">{subtitle}</Text> : null}
+                    </View>
                     <EmptyState message="Pick a quiz from the Quizzes tab to get started." testID="home-empty" />
                 </View>
             </SafeAreaView>
@@ -87,7 +95,10 @@ export function HomeScreen() {
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
+                <View style={styles.header}>
+                    <Text style={styles.title} accessibilityRole="header">{title}</Text>
+                    {subtitle ? <Text style={styles.subtitle} testID="home-subtitle">{subtitle}</Text> : null}
+                </View>
 
                 <Card
                     style={styles.card}
@@ -146,11 +157,19 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: spacing.lg
     },
+    header: {
+        marginBottom: spacing.lg
+    },
     title: {
         fontSize: typography.fontSize.xxl,
         fontWeight: typography.fontWeight.bold,
         color: colors.text,
-        marginBottom: spacing.lg,
+        textAlign: 'center'
+    },
+    subtitle: {
+        fontSize: typography.fontSize.md,
+        color: colors.textMuted,
+        marginTop: spacing.xs,
         textAlign: 'center'
     },
     card: {
