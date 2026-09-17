@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../core/auth/authStore';
 import { useQuizHistory } from '../../features/history/hooks/useQuizHistory';
 import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../../shared/components';
@@ -28,6 +29,10 @@ function mostRecent(quizzes: Quiz[]): Quiz {
  * cards, so a returning user sees their standing before picking a quiz
  * rather than needing a tab switch to History for a total or an average —
  * see MainTabs.tsx for where this sits in the tab tree.
+ *
+ * Wrapped in a top-edge-only `SafeAreaView` (matching HistoryScreen,
+ * QuizListScreen, etc.) so the title clears the status bar/notch instead
+ * of sitting underneath it — the tab bar already handles the bottom edge.
  */
 export function HomeScreen() {
     const fname = useAuthStore((state) => state.user?.fname);
@@ -37,18 +42,24 @@ export function HomeScreen() {
     const greeting = fname ? `Welcome back, ${fname}!` : 'Welcome to Quiz Master';
 
     if (historyQuery.isPending) {
-        return <LoadingState testID="home-loading" />;
+        return (
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+                <LoadingState testID="home-loading" />
+            </SafeAreaView>
+        );
     }
 
     if (historyQuery.isError) {
         return (
-            <ErrorState
-                message={historyQuery.error.message}
-                testID="home-error"
-                onRetry={() => historyQuery.refetch()}
-                retrying={historyQuery.isRefetching}
-                retryTestID="home-retry-button"
-            />
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+                <ErrorState
+                    message={historyQuery.error.message}
+                    testID="home-error"
+                    onRetry={() => historyQuery.refetch()}
+                    retrying={historyQuery.isRefetching}
+                    retryTestID="home-retry-button"
+                />
+            </SafeAreaView>
         );
     }
 
@@ -56,10 +67,12 @@ export function HomeScreen() {
 
     if (quizzes.length === 0) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
-                <EmptyState message="Pick a quiz from the Quizzes tab to get started." testID="home-empty" />
-            </View>
+            <SafeAreaView style={styles.safeArea} edges={['top']}>
+                <View style={styles.container}>
+                    <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
+                    <EmptyState message="Pick a quiz from the Quizzes tab to get started." testID="home-empty" />
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -72,61 +85,65 @@ export function HomeScreen() {
     const isPersonalBest = lastQuizPercentage >= bestPercentage;
 
     return (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-            <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                <Text style={styles.title} accessibilityRole="header">{greeting}</Text>
 
-            <Card
-                style={styles.card}
-                testID="home-stat-completed"
-                accessible
-                accessibilityLabel={`${totalCompleted} quizzes completed`}
-            >
-                <Text style={styles.statValue}>{totalCompleted}</Text>
-                <Text style={styles.statLabel}>Quizzes Completed</Text>
-            </Card>
+                <Card
+                    style={styles.card}
+                    testID="home-stat-completed"
+                    accessible
+                    accessibilityLabel={`${totalCompleted} quizzes completed`}
+                >
+                    <Text style={styles.statValue}>{totalCompleted}</Text>
+                    <Text style={styles.statLabel}>Quizzes Completed</Text>
+                </Card>
 
-            <Card
-                style={styles.card}
-                testID="home-stat-average"
-                accessible
-                accessibilityLabel={`${averagePercentage.toFixed(1)} percent average score`}
-            >
-                <Text style={styles.statValue}>{averagePercentage.toFixed(1)}%</Text>
-                <Text style={styles.statLabel}>Average Score</Text>
-            </Card>
+                <Card
+                    style={styles.card}
+                    testID="home-stat-average"
+                    accessible
+                    accessibilityLabel={`${averagePercentage.toFixed(1)} percent average score`}
+                >
+                    <Text style={styles.statValue}>{averagePercentage.toFixed(1)}%</Text>
+                    <Text style={styles.statLabel}>Average Score</Text>
+                </Card>
 
-            <Card
-                style={styles.card}
-                testID="home-stat-last-quiz"
-                accessible
-                accessibilityLabel={`Last quiz: ${lastQuiz.title}, ${lastQuizPercentage.toFixed(1)} percent${
-                    isPersonalBest ? ', personal best' : ''
-                }`}
-            >
-                <View style={styles.lastQuizHeader}>
-                    <Text style={styles.statLabel}>Last Quiz</Text>
-                    {isPersonalBest ? (
-                        <Badge label="Personal best!" variant="success" testID="home-personal-best-badge" />
-                    ) : null}
-                </View>
-                <Text style={styles.quizTitle}>{lastQuiz.title}</Text>
-                <Text style={styles.statValue}>{lastQuizPercentage.toFixed(1)}%</Text>
-            </Card>
-        </ScrollView>
+                <Card
+                    style={styles.card}
+                    testID="home-stat-last-quiz"
+                    accessible
+                    accessibilityLabel={`Last quiz: ${lastQuiz.title}, ${lastQuizPercentage.toFixed(1)} percent${
+                        isPersonalBest ? ', personal best' : ''
+                    }`}
+                >
+                    <View style={styles.lastQuizHeader}>
+                        <Text style={styles.statLabel}>Last Quiz</Text>
+                        {isPersonalBest ? (
+                            <Badge label="Personal best!" variant="success" testID="home-personal-best-badge" />
+                        ) : null}
+                    </View>
+                    <Text style={styles.quizTitle}>{lastQuiz.title}</Text>
+                    <Text style={styles.statValue}>{lastQuizPercentage.toFixed(1)}%</Text>
+                </Card>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: colors.background
+    },
     container: {
         flex: 1,
-        backgroundColor: colors.background,
         alignItems: 'center',
         justifyContent: 'center',
         padding: spacing.lg
     },
     scrollContent: {
         flexGrow: 1,
-        backgroundColor: colors.background,
         padding: spacing.lg
     },
     title: {
