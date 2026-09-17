@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuthStore } from '../../core/auth/authStore';
+import { InactivityGate } from '../../core/auth/InactivityGate';
 import { useNetworkStatus } from '../../core/network/useNetworkStatus';
 import { colors } from '../../shared/theme';
 import { OfflineBanner } from '../../shared/components';
@@ -16,7 +17,11 @@ import { MainTabs } from './MainTabs';
  *
  * Also renders a global `OfflineBanner` above whichever stack is active, so
  * connectivity loss is visible regardless of auth state or which screen is
- * showing.
+ * showing. Wrapped in `InactivityGate` so a signed-in user is logged out
+ * after 15 minutes with no touch anywhere in the app (see
+ * `core/auth/useInactivityTimeout.ts`) — placed here rather than deeper
+ * inside `MainTabs` so it also covers `AuthStack` screens like Register,
+ * even though only a `token` arms the actual timer.
  */
 export function RootNavigator() {
     const token = useAuthStore((state) => state.token);
@@ -32,10 +37,12 @@ export function RootNavigator() {
     }
 
     return (
-        <View style={styles.root}>
-            {isOnline ? null : <OfflineBanner />}
-            {token ? <MainTabs /> : <AuthStack />}
-        </View>
+        <InactivityGate>
+            <View style={styles.root}>
+                {isOnline ? null : <OfflineBanner />}
+                {token ? <MainTabs /> : <AuthStack />}
+            </View>
+        </InactivityGate>
     );
 }
 

@@ -50,7 +50,10 @@ describe('RootNavigator', () => {
 
         await renderRootNavigator();
 
-        expect(screen.getByText('Welcome to Quiz Master')).toBeTruthy();
+        // Asserted via the tab bar rather than Home screen content, so this
+        // test doesn't couple to what Home happens to render (its content
+        // depends on quiz history, which isn't mocked in this suite).
+        expect(screen.getByTestId('tab-home')).toBeTruthy();
     });
 
     test('does not show the offline banner while connected', async () => {
