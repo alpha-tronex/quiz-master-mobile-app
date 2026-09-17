@@ -55,9 +55,10 @@ No ads, no clutter — just quizzes.
 
 ## Promotional graphic (Google Play — 1024×500)
 
-Tagline: "Take quizzes, track your scores."
-Style: brand teal (`#1abc9c`) background, centered "QM" monogram app icon,
-tagline in white below.
+`play-feature-graphic.png` (source: `play-feature-graphic.svg`) — brand teal
+(`#1abc9c`) background, centered "QM" monogram, tagline "Take quizzes, track
+your scores." in white below. Ready to upload as-is to the Play Console's
+Feature graphic slot.
 
 ---
 
