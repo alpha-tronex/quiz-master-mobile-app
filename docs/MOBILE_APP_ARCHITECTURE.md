@@ -26,6 +26,8 @@ src/
     navigation/
       AuthStack.tsx        Login, Register
       MainTabs.tsx          Home, Quizzes, History, Account
+    screens/
+      HomeScreen.tsx        Landing tab — quick-stat cards (completed/average/last quiz) summarizing quiz history, sourced from the same query as History
   features/
     auth/
       screens/              LoginScreen, RegisterScreen
@@ -49,11 +51,13 @@ src/
     types/
       quiz.ts                 Quiz, Question, QuestionType — ported from src/app/shared/models/quiz.ts
       user.ts                 User, Address — ported from src/app/shared/models/users.ts
-    components/                Button, TextField, Card, Modal, etc.
+    components/                Button, TextField, Card, Badge, Modal, etc.
     validation/                Shared validators (username, password, email, phone, zip)
   core/
     auth/
       authStore.ts            Session state (Zustand), token persistence
+      useInactivityTimeout.ts Schedules a silent logout after 15 min of no foreground touch activity
+      InactivityGate.tsx       App-wide touch observer (PanResponder capture phase) that resets the timer; wraps RootNavigator
     network/
       useNetworkStatus.ts      Connectivity hook (NetInfo), backs the global OfflineBanner + Retry affordances
     config.ts                  API base URL, environment
@@ -79,6 +83,12 @@ One `httpClient` wrapping `fetch`, with:
 
 ### Token storage
 `expo-secure-store` (iOS Keychain / Android Keystore) in place of `localStorage`. Token is read once at app launch to restore session; cleared on logout.
+
+### Session — inactivity logout
+`useInactivityTimeout` schedules a silent `clearSession()` 15 minutes after the last foreground touch, no-ops when there's no active session, and reschedules on every touch. `InactivityGate` observes touches app-wide via `PanResponder`'s capture phase (`onStartShouldSetPanResponderCapture`, always returning `false`), so it never claims the responder or interferes with nested `Touchable`/`ScrollView` gestures — no `react-native-gesture-handler` dependency needed. It wraps the authenticated app tree in `RootNavigator`. Deliberately foreground-only (no `AppState`/background-duration tracking) and silent (no warning modal) by design — see the inline doc comments on both files for the reasoning.
+
+### Home screen
+`HomeScreen` summarizes the same `GET /api/quiz/history/:username` data `HistoryScreen` lists in full, as three at-a-glance stat cards (quizzes completed, average score, last quiz) plus a `Badge` ("Personal best!") when the latest quiz ties or beats every prior score. Purely derived client-side from the existing `useQuizHistory` query — no new endpoint.
 
 ### Types
 `Quiz`, `Question`, `QuestionType`, `User`, `Address` are ported directly from `src/app/shared/models/` in the Angular app, keeping the data shape identical across both clients so the backend contract doesn't fork.

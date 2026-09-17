@@ -28,6 +28,7 @@ Incremental delivery, each phase producing something runnable/testable rather th
 - Register screen → `POST /api/register`.
 - Token persisted securely; auto-login on app relaunch if a valid token exists.
 - Logout clears session.
+- Silent auto-logout after 15 minutes of no foreground touch activity (`useInactivityTimeout` + `InactivityGate`).
 - Unit tests for `useLogin`/`useRegister` hooks; Maestro/Detox flow for register → login → logout.
 
 *Exit criteria: a new user can register, land on Home, close and reopen the app and stay logged in, and log out.*
@@ -48,6 +49,7 @@ Incremental delivery, each phase producing something runnable/testable rather th
 
 ## Phase 5 — Polish
 - Consistent loading/error/empty states across all screens.
+- Home screen redesigned from a plain welcome message into quick-stat cards (quizzes completed, average score, last quiz) with a personal-best `Badge`, sourced from the existing quiz-history query.
 - App icons, splash screen, branding.
 - Accessibility pass (labels, contrast, touch targets).
 - Graceful handling of network failures (no offline sync, but no crashes either).
