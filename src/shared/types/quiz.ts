@@ -46,8 +46,18 @@ export interface Quiz {
     duration?: number;
 }
 
-/** Shape returned by GET /api/quizzes — a lightweight listing, not the full quiz. */
+/**
+ * Shape returned by GET /api/quizzes — a lightweight listing, not the full
+ * quiz. `taken`/`locked` reflect the requesting student's own attempt
+ * history (see server/utils/quizStatus.js) and are only meaningful for
+ * students; the server always reports `false`/`false` for admins, who
+ * aren't subject to the retake lock.
+ */
 export interface QuizSummary {
     id: number;
     title: string;
+    /** Has at least one completed attempt on record. */
+    taken: boolean;
+    /** Taken, and not currently reopened for a retake by an admin. */
+    locked: boolean;
 }

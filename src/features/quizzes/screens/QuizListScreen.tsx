@@ -1,24 +1,43 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
+import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useQuizzes } from '../hooks/useQuizzes';
 import type { QuizzesStackParamList } from '../../../app/navigation/QuizzesStack';
+import type { QuizSummary } from '../../../shared/types';
 
 type Props = NativeStackScreenProps<QuizzesStackParamList, 'QuizList'>;
 
 /**
  * GET /api/quizzes via `useQuizzes`, rendered as a tappable list — matching
- * the Angular app's quiz-selection entry point. Tapping a row navigates to
- * `TakeQuiz` with the chosen `quizId`, which fetches the full quiz via
- * `GET /api/quiz?id=`. Wrapped in a top-edge `SafeAreaView` since this
- * screen (like RegisterScreen) renders its own title flush against the top
- * with its stack header hidden — see QuizzesStack.tsx.
+ * the Angular app's quiz-selection entry point. A quiz that's never been
+ * taken navigates to `TakeQuiz`, which fetches the full quiz via
+ * `GET /api/quiz?id=`. A quiz that has been taken (`item.taken`) instead
+ * navigates to `QuizSummary` — retaking happens from there once an admin
+ * has reopened it (`!item.locked`), rather than straight from this list.
+ * Wrapped in a top-edge `SafeAreaView` since this screen (like
+ * RegisterScreen) renders its own title flush against the top with its
+ * stack header hidden — see QuizzesStack.tsx.
  */
 export function QuizListScreen({ navigation }: Props) {
     const quizzesQuery = useQuizzes();
+
+    function statusLabel(item: QuizSummary): string | null {
+        if (!item.taken) {
+            return null;
+        }
+        return item.locked ? 'Taken' : 'Taken — reopened';
+    }
+
+    function onPressQuiz(item: QuizSummary) {
+        if (item.taken) {
+            navigation.navigate('QuizSummary', { quizId: item.id, title: item.title, locked: item.locked });
+        } else {
+            navigation.navigate('TakeQuiz', { quizId: item.id });
+        }
+    }
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -41,19 +60,31 @@ export function QuizListScreen({ navigation }: Props) {
                     data={quizzesQuery.data}
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.listContent}
-                    renderItem={({ item }) => (
-                        <Pressable
-                            testID={`quiz-list-item-${item.id}`}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${item.title} quiz`}
-                            accessibilityHint="Opens this quiz"
-                            onPress={() => navigation.navigate('TakeQuiz', { quizId: item.id })}
-                        >
-                            <Card style={styles.card}>
-                                <Text style={styles.quizTitle}>{item.title}</Text>
-                            </Card>
-                        </Pressable>
-                    )}
+                    renderItem={({ item }) => {
+                        const label = statusLabel(item);
+                        return (
+                            <Pressable
+                                testID={`quiz-list-item-${item.id}`}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${item.title} quiz${item.taken ? ', taken' : ''}`}
+                                accessibilityHint={item.taken ? 'Opens this quiz’s summary' : 'Opens this quiz'}
+                                onPress={() => onPressQuiz(item)}
+                            >
+                                <Card style={styles.card}>
+                                    <View style={styles.cardHeader}>
+                                        <Text style={styles.quizTitle}>{item.title}</Text>
+                                        {label ? (
+                                            <Badge
+                                                label={label}
+                                                variant={item.locked ? 'neutral' : 'info'}
+                                                testID={`quiz-list-item-${item.id}-status`}
+                                            />
+                                        ) : null}
+                                    </View>
+                                </Card>
+                            </Pressable>
+                        );
+                    }}
                 />
             )}
         </SafeAreaView>
@@ -78,6 +109,11 @@ const styles = StyleSheet.create({
     },
     card: {
         marginBottom: spacing.md
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
     },
     quizTitle: {
         fontSize: typography.fontSize.lg,

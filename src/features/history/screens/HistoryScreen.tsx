@@ -5,33 +5,7 @@ import { Card, EmptyState, ErrorState, LoadingState } from '../../../shared/comp
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { useQuizHistory } from '../hooks/useQuizHistory';
-import type { Quiz } from '../../../shared/types';
-
-/** Ported from history.component.ts#formatDate: locale date + time string. */
-function formatDate(date: Quiz['completedAt']): string {
-    if (!date) {
-        return '';
-    }
-    const parsed = new Date(date);
-    return `${parsed.toLocaleDateString()} ${parsed.toLocaleTimeString()}`;
-}
-
-/** Ported from history.component.ts#formatDuration. */
-function formatDuration(seconds?: number): string {
-    if (!seconds || seconds < 0) {
-        return 'N/A';
-    }
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    if (hours > 0) {
-        return `${hours}h ${minutes}m ${secs}s`;
-    }
-    if (minutes > 0) {
-        return `${minutes}m ${secs}s`;
-    }
-    return `${secs}s`;
-}
+import { formatCompletedAt as formatDate, formatDuration } from '../../../shared/utils/quizStats';
 
 /**
  * GET /api/quiz/history/:username, rendered as a card list (a scrollable

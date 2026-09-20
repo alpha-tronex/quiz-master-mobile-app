@@ -82,8 +82,8 @@ describe('QuizListScreen', () => {
             isPending: false,
             isError: false,
             data: [
-                { id: 1, title: 'General Knowledge' },
-                { id: 2, title: 'Web Basics' }
+                { id: 1, title: 'General Knowledge', taken: false, locked: false },
+                { id: 2, title: 'Web Basics', taken: false, locked: false }
             ]
         });
         const navigateMock = jest.fn();
@@ -101,5 +101,57 @@ describe('QuizListScreen', () => {
         await user.press(item);
 
         await waitFor(() => expect(navigateMock).toHaveBeenCalledWith('TakeQuiz', { quizId: 2 }));
+    });
+
+    test('shows a Taken badge and opens the summary for a locked (already-taken) quiz', async () => {
+        useQuizzesMock.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: [{ id: 3, title: 'Fiqh Basics', taken: true, locked: true }]
+        });
+        const navigateMock = jest.fn();
+        const user = userEvent.setup();
+        await renderScreen(navigateMock);
+
+        const item = screen.getByTestId('quiz-list-item-3');
+        expect(item.props.accessibilityLabel).toBe('Fiqh Basics quiz, taken');
+        expect(screen.getByTestId('quiz-list-item-3-status')).toHaveTextContent('Taken');
+
+        await user.press(item);
+
+        await waitFor(() =>
+            expect(navigateMock).toHaveBeenCalledWith('QuizSummary', { quizId: 3, title: 'Fiqh Basics', locked: true })
+        );
+    });
+
+    test('shows a reopened badge and opens the summary for a taken-but-unlocked quiz', async () => {
+        useQuizzesMock.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: [{ id: 4, title: 'Seerah', taken: true, locked: false }]
+        });
+        const navigateMock = jest.fn();
+        const user = userEvent.setup();
+        await renderScreen(navigateMock);
+
+        expect(screen.getByTestId('quiz-list-item-4-status')).toHaveTextContent('Taken — reopened');
+
+        await user.press(screen.getByTestId('quiz-list-item-4'));
+
+        await waitFor(() =>
+            expect(navigateMock).toHaveBeenCalledWith('QuizSummary', { quizId: 4, title: 'Seerah', locked: false })
+        );
+    });
+
+    test('shows no status badge for a never-taken quiz', async () => {
+        useQuizzesMock.mockReturnValue({
+            isPending: false,
+            isError: false,
+            data: [{ id: 5, title: 'Aqeedah', taken: false, locked: false }]
+        });
+
+        await renderScreen();
+
+        expect(screen.queryByTestId('quiz-list-item-5-status')).toBeNull();
     });
 });

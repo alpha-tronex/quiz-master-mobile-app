@@ -2,26 +2,11 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../core/auth/authStore';
+import { useCohort } from '../../features/cohort/hooks/useCohort';
 import { useQuizHistory } from '../../features/history/hooks/useQuizHistory';
 import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../../shared/components';
 import { colors, spacing, typography } from '../../shared/theme';
-import type { Quiz } from '../../shared/types';
-
-/** Score as a 0-100 percentage; a quiz with no questions scores 0, not NaN. */
-function percentageOf(quiz: Quiz): number {
-    const total = quiz.totalQuestions ?? 0;
-    const score = quiz.score ?? 0;
-    return total > 0 ? (score / total) * 100 : 0;
-}
-
-/** Most recently completed quiz, by `completedAt`; falls back to array order if undated. */
-function mostRecent(quizzes: Quiz[]): Quiz {
-    return quizzes.reduce((latest, quiz) => {
-        const latestTime = latest.completedAt ? new Date(latest.completedAt).getTime() : 0;
-        const quizTime = quiz.completedAt ? new Date(quiz.completedAt).getTime() : 0;
-        return quizTime > latestTime ? quiz : latest;
-    }, quizzes[0]);
-}
+import { mostRecent, percentageOf } from '../../shared/utils/quizStats';
 
 /**
  * Landing tab for a signed-in user. Summarizes `GET /api/quiz/history/:username`
@@ -37,11 +22,20 @@ function mostRecent(quizzes: Quiz[]): Quiz {
  * The title itself stays constant ("Welcome to Quiz Master"); personalization
  * lives in a `subtitle` line underneath ("Hello, {fname}!"), shown only when
  * signed in with a name — keeping the two from saying the same thing twice.
+ *
+ * A cohort badge ("Cohort: Guest", "Cohort: Fall 2026", ...) renders below
+ * the subtitle once `GET /api/cohort/mine` resolves — see useCohort.ts and
+ * server/routes/cohortRoutes.js. It fails/loads silently (no spinner, no
+ * error state of its own): the history query already owns this screen's
+ * loading/error states, and the cohort name is supplementary context, not
+ * something worth blocking or erroring the whole page over.
  */
 export function HomeScreen() {
     const fname = useAuthStore((state) => state.user?.fname);
     const username = useAuthStore((state) => state.user?.uname ?? '');
     const historyQuery = useQuizHistory(username);
+    const cohortQuery = useCohort(username);
+    const cohortName = cohortQuery.data;
 
     const title = 'Welcome to Quiz Master';
     const subtitle = fname ? `Hello, ${fname}!` : null;
@@ -98,6 +92,14 @@ export function HomeScreen() {
                 <View style={styles.header}>
                     <Text style={styles.title} accessibilityRole="header">{title}</Text>
                     {subtitle ? <Text style={styles.subtitle} testID="home-subtitle">{subtitle}</Text> : null}
+                    {cohortName ? (
+                        <Badge
+                            label={`Cohort: ${cohortName}`}
+                            variant="info"
+                            testID="home-cohort-badge"
+                            style={styles.cohortBadge}
+                        />
+                    ) : null}
                 </View>
 
                 <Card
@@ -171,6 +173,10 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         marginTop: spacing.xs,
         textAlign: 'center'
+    },
+    cohortBadge: {
+        alignSelf: 'center',
+        marginTop: spacing.xs
     },
     card: {
         marginBottom: spacing.md

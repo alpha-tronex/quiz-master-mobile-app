@@ -31,7 +31,7 @@ afterEach(() => {
 
 describe('quiz.api', () => {
     test('getQuizzes() fetches /api/quizzes and returns the summaries', async () => {
-        const summaries: QuizSummary[] = [{ id: 1, title: 'General Knowledge' }];
+        const summaries: QuizSummary[] = [{ id: 1, title: 'General Knowledge', taken: false, locked: false }];
         getMock.mockResolvedValue(summaries);
 
         const result = await getQuizzes();

@@ -1,13 +1,16 @@
 import React from 'react';
 import { render, screen, userEvent } from '@testing-library/react-native';
 import { HomeScreen } from '../HomeScreen';
+import { useCohort } from '../../../features/cohort/hooks/useCohort';
 import { useQuizHistory } from '../../../features/history/hooks/useQuizHistory';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { QuestionType } from '../../../shared/types';
 import type { Quiz } from '../../../shared/types';
 
+jest.mock('../../../features/cohort/hooks/useCohort', () => ({ useCohort: jest.fn() }));
 jest.mock('../../../features/history/hooks/useQuizHistory', () => ({ useQuizHistory: jest.fn() }));
 
+const useCohortMock = useCohort as jest.Mock;
 const useQuizHistoryMock = useQuizHistory as jest.Mock;
 
 const question = {
@@ -38,6 +41,13 @@ const latestQuiz: Quiz = {
     duration: 90,
     questions: [question]
 };
+
+beforeEach(() => {
+    // Cohort is supplementary to every test below except the ones that
+    // specifically assert on it — default to "not loaded yet" so the badge
+    // stays absent unless a test opts in.
+    useCohortMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
+});
 
 afterEach(() => {
     jest.clearAllMocks();
@@ -184,5 +194,57 @@ describe('HomeScreen', () => {
         await render(<HomeScreen />);
 
         expect(useQuizHistoryMock).toHaveBeenCalledWith('adalovelace');
+    });
+
+    test('shows a cohort badge once the cohort name has loaded', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+        useCohortMock.mockReturnValue({ isPending: false, isError: false, data: 'Guest' });
+
+        await render(<HomeScreen />);
+
+        expect(screen.getByTestId('home-cohort-badge')).toHaveTextContent('Cohort: Guest');
+    });
+
+    test('shows the real cohort name instead of Guest for a student with an active cohort', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+        useCohortMock.mockReturnValue({ isPending: false, isError: false, data: 'Fall 2026' });
+
+        await render(<HomeScreen />);
+
+        expect(screen.getByTestId('home-cohort-badge')).toHaveTextContent('Cohort: Fall 2026');
+    });
+
+    test('does not show a cohort badge while the cohort is still loading', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+        useCohortMock.mockReturnValue({ isPending: true, isError: false, data: undefined });
+
+        await render(<HomeScreen />);
+
+        expect(screen.queryByTestId('home-cohort-badge')).toBeNull();
+    });
+
+    test('does not show a cohort badge, and does not otherwise break the page, when the cohort fetch fails', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [] });
+        useCohortMock.mockReturnValue({
+            isPending: false,
+            isError: true,
+            error: { message: 'Network error' },
+            data: undefined
+        });
+
+        await render(<HomeScreen />);
+
+        expect(screen.queryByTestId('home-cohort-badge')).toBeNull();
+        expect(screen.getByTestId('home-empty')).toBeTruthy();
+    });
+
+    test('renders the cohort badge alongside the populated stat cards', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [olderQuiz, latestQuiz] });
+        useCohortMock.mockReturnValue({ isPending: false, isError: false, data: 'Guest' });
+
+        await render(<HomeScreen />);
+
+        expect(screen.getByTestId('home-cohort-badge')).toHaveTextContent('Cohort: Guest');
+        expect(screen.getByTestId('home-stat-completed')).toBeTruthy();
     });
 });

@@ -22,8 +22,8 @@ afterEach(() => {
 describe('useQuizzes', () => {
     test('returns the quiz summaries on success', async () => {
         const summaries: QuizSummary[] = [
-            { id: 1, title: 'General Knowledge' },
-            { id: 2, title: 'Web Basics' }
+            { id: 1, title: 'General Knowledge', taken: false, locked: false },
+            { id: 2, title: 'Web Basics', taken: false, locked: false }
         ];
         getQuizzesMock.mockResolvedValue(summaries);
 
