@@ -36,12 +36,20 @@ function isQuestionCorrect(question: Question): boolean {
     return sortedSelection.every((value, index) => value === sortedCorrect[index]);
 }
 
-/** 1-based answer lookup, matching `getAnswerText` in questions.component.ts. */
+/**
+ * `answerNum` is a plain 0-based index into question.answers, matching how
+ * selection/correct are stored (see recordSingleAnswer/recordMultiChoiceAnswer
+ * below and questions.component.ts's `getAnswerText`) — this used to subtract
+ * 1, treating answerNum as a 1-based display position, which mismatched the
+ * 0-based `correct` indices coming from the server and silently marked
+ * correctly-answered questions wrong (a question whose correct answer was
+ * index 0 could never be satisfied at all, since selection was never 0).
+ */
 function getAnswerText(question: Question, answerNum: number): string {
-    if (!question.answers || answerNum < 1 || answerNum > question.answers.length) {
+    if (!question.answers || answerNum < 0 || answerNum >= question.answers.length) {
         return '';
     }
-    return question.answers[answerNum - 1];
+    return question.answers[answerNum];
 }
 
 /**
@@ -94,6 +102,12 @@ export function TakeQuizScreen({ route, navigation }: Props) {
         });
     }
 
+    // `answerNum` is a plain 0-based index into question.answers, matching how
+    // `correct` is stored server-side and how getAnswerText() indexes answers[]
+    // (see above). The render loop below now passes the raw *ngFor-style loop
+    // index straight through — it used to pass `index + 1`, which mismatched
+    // the 0-based `correct` indices and silently marked correctly-answered
+    // questions wrong.
     function recordMultiChoiceAnswer(answerNum: number) {
         updateCurrentQuestion((question) => {
             const selection = question.selection ?? [];
@@ -307,9 +321,9 @@ export function TakeQuizScreen({ route, navigation }: Props) {
                             key={index}
                             testID={`answer-option-${index + 1}`}
                             text={answer}
-                            selected={(curQuestion.selection ?? []).includes(index + 1)}
+                            selected={(curQuestion.selection ?? []).includes(index)}
                             variant={isMultiChoice ? 'checkbox' : 'radio'}
-                            onPress={() => (isMultiChoice ? recordMultiChoiceAnswer(index + 1) : recordSingleAnswer(index + 1))}
+                            onPress={() => (isMultiChoice ? recordMultiChoiceAnswer(index) : recordSingleAnswer(index))}
                         />
                     ))}
 

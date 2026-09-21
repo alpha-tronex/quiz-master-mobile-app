@@ -32,8 +32,10 @@ const testQuiz: Quiz = {
             questionType: QuestionType.MultipleChoice,
             question: 'Which of the following are programming languages?',
             instructions: 'Select all correct answers',
+            // 0-based indices, matching the DB/server convention (Quiz.correct):
+            // JavaScript (index 0) and Python (index 2).
             answers: ['JavaScript', 'HTML', 'Python', 'CSS'],
-            correct: [1, 3]
+            correct: [0, 2]
         },
         {
             questionNum: 1,
@@ -41,15 +43,17 @@ const testQuiz: Quiz = {
             question: 'What does HTTP stand for?',
             instructions: 'Select the correct answer',
             answers: ['HyperText Transfer Protocol', 'High Tech Transfer Protocol'],
-            correct: [1]
+            // 0-based: 'HyperText Transfer Protocol' is index 0.
+            correct: [0]
         },
         {
             questionNum: 2,
             questionType: QuestionType.TrueFalse,
             question: 'JavaScript and Java are the same programming language.',
             instructions: 'Select True or False',
+            // 0-based: 'False' is index 1.
             answers: ['True', 'False'],
-            correct: [2]
+            correct: [1]
         }
     ]
 };
