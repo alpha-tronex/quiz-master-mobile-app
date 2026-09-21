@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { CompositeScreenProps } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { Button, Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
+import { Banner, Button, Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { useQuiz } from '../hooks/useQuiz';
@@ -158,8 +158,16 @@ export function TakeQuizScreen({ route, navigation }: Props) {
         saveQuiz.mutate(
             { username, quizData },
             {
-                onSettled: () => {
+                onSuccess: () => {
                     navigation.navigate('History');
+                },
+                onError: () => {
+                    // Don't navigate away on a failed/rejected submission (e.g. the
+                    // quiz was already taken and this attempt's reopen grant was
+                    // already consumed) — that would look identical to a successful
+                    // retake. Re-enable the buttons instead so the student sees the
+                    // Banner below and isn't stuck on a permanently-disabled screen.
+                    setResultsAccepted(false);
                 }
             }
         );
@@ -251,6 +259,10 @@ export function TakeQuizScreen({ route, navigation }: Props) {
                     <Text style={styles.scoreSummary} testID="take-quiz-score-summary">
                         {`Score: ${score} / ${questions.length}`}
                     </Text>
+
+                    {saveQuiz.isError ? (
+                        <Banner message={saveQuiz.error.message} variant="error" testID="take-quiz-save-error-banner" />
+                    ) : null}
 
                     <View style={styles.actionsRow}>
                         <Button

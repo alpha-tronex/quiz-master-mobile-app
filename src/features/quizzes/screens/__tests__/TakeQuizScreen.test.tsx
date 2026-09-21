@@ -247,7 +247,7 @@ describe('TakeQuizScreen', () => {
 
     test('accepting results saves the quiz for the logged-in user and navigates to History', async () => {
         useQuizMock.mockReturnValue({ isPending: false, isError: false, data: testQuiz });
-        saveQuizMutate.mockImplementation((_payload, { onSettled }: { onSettled: () => void }) => onSettled());
+        saveQuizMutate.mockImplementation((_payload, { onSuccess }: { onSuccess: () => void }) => onSuccess());
         const navigateMock = jest.fn();
         const user = userEvent.setup();
         await renderScreen(navigateMock);
@@ -268,5 +268,43 @@ describe('TakeQuizScreen', () => {
         expect(payload.username).toBe('adalovelace');
         expect(payload.quizData).toMatchObject({ id: 1, title: 'General Knowledge', score: 3, totalQuestions: 3 });
         expect(navigateMock).toHaveBeenCalledWith('History');
+    });
+
+    // Covers the "keep retaking a locked quiz until the app is refreshed"
+    // bug: if the backend rejects a resubmission (e.g. the reopen grant was
+    // already consumed), the screen must not navigate away as if it
+    // succeeded — that would look identical to a real retake going through.
+    test('a rejected submission shows an error banner, does not navigate, and re-enables the buttons', async () => {
+        useQuizMock.mockReturnValue({ isPending: false, isError: false, data: testQuiz });
+        saveQuizMutate.mockImplementation((_payload, { onError }: { onError: () => void }) => onError());
+        useSaveQuizMock.mockReturnValue({
+            mutate: saveQuizMutate,
+            isPending: false,
+            isError: true,
+            error: { message: 'This quiz has already been completed.' }
+        });
+        const navigateMock = jest.fn();
+        const user = userEvent.setup();
+        await renderScreen(navigateMock);
+
+        await user.press(screen.getByTestId('answer-option-1'));
+        await user.press(screen.getByTestId('answer-option-3'));
+        await user.press(screen.getByTestId('take-quiz-next-button'));
+        await user.press(screen.getByTestId('answer-option-1'));
+        await user.press(screen.getByTestId('take-quiz-next-button'));
+        await user.press(screen.getByTestId('answer-option-2'));
+        await user.press(screen.getByTestId('take-quiz-submit-button'));
+        await screen.findByTestId('take-quiz-score-summary');
+
+        await user.press(screen.getByTestId('take-quiz-accept-button'));
+
+        await waitFor(() => expect(saveQuizMutate).toHaveBeenCalled());
+        expect(navigateMock).not.toHaveBeenCalled();
+        expect(screen.getByTestId('take-quiz-save-error-banner')).toHaveTextContent(
+            'This quiz has already been completed.'
+        );
+        expect(screen.getByTestId('take-quiz-accept-button').props.accessibilityState).toMatchObject({
+            disabled: false
+        });
     });
 });

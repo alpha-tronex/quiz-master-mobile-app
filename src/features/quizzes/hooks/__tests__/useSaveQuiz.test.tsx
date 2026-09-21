@@ -61,6 +61,32 @@ describe('useSaveQuiz', () => {
         expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['quizHistory', 'adalovelace'] });
     });
 
+    test('also invalidates the quizzes list on success, so a just-submitted quiz stops looking retakeable', async () => {
+        saveQuizMock.mockResolvedValue({ message: 'Quiz saved successfully', quiz: completedQuiz });
+        const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+
+        const { result } = await renderHook(() => useSaveQuiz(), { wrapper });
+
+        result.current.mutate({ username: 'adalovelace', quizData: completedQuiz });
+
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['quizzes'] });
+    });
+
+    test('does not invalidate any queries on failure', async () => {
+        saveQuizMock.mockRejectedValue(new ApiClientError(500, 'SERVER_ERROR', 'Something went wrong'));
+        const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
+
+        const { result } = await renderHook(() => useSaveQuiz(), { wrapper });
+
+        result.current.mutate({ username: 'adalovelace', quizData: completedQuiz });
+
+        await waitFor(() => expect(result.current.isError).toBe(true));
+
+        expect(invalidateSpy).not.toHaveBeenCalled();
+    });
+
     test('surfaces an ApiClientError on failure', async () => {
         saveQuizMock.mockRejectedValue(new ApiClientError(500, 'SERVER_ERROR', 'Something went wrong'));
 
