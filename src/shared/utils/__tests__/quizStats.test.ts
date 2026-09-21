@@ -1,4 +1,4 @@
-import { formatCompletedAt, formatDuration, latestAttemptFor, mostRecent, percentageOf } from '../quizStats';
+import { formatCompletedAt, formatDuration, groupHistoryByQuiz, latestAttemptFor, mostRecent, percentageOf } from '../quizStats';
 import type { Quiz } from '../../types';
 
 const baseQuiz: Quiz = {
@@ -65,6 +65,51 @@ describe('formatCompletedAt', () => {
         const result = formatCompletedAt('2026-01-01T00:00:00.000Z');
         expect(result.length).toBeGreaterThan(0);
         expect(result).toContain(new Date('2026-01-01T00:00:00.000Z').toLocaleDateString());
+    });
+});
+
+describe('groupHistoryByQuiz', () => {
+    test('groups multiple attempts of the same quiz id under one entry', () => {
+        const first = { ...baseQuiz, id: 5, title: 'Basic Algebra', completedAt: '2026-01-01T00:00:00.000Z' };
+        const second = { ...baseQuiz, id: 5, title: 'Basic Algebra', completedAt: '2026-02-01T00:00:00.000Z' };
+
+        const groups = groupHistoryByQuiz([first, second]);
+
+        expect(groups).toHaveLength(1);
+        expect(groups[0]).toMatchObject({ id: 5, title: 'Basic Algebra' });
+        expect(groups[0].attempts).toHaveLength(2);
+    });
+
+    test('keeps distinct quiz ids as separate groups', () => {
+        const algebra = { ...baseQuiz, id: 5, title: 'Basic Algebra' };
+        const history = { ...baseQuiz, id: 9, title: 'US History' };
+
+        const groups = groupHistoryByQuiz([algebra, history]);
+
+        expect(groups).toHaveLength(2);
+        expect(groups.map((group) => group.id).sort()).toEqual([5, 9]);
+    });
+
+    test('sorts attempts within a group most-recent-first, regardless of input order', () => {
+        const older = { ...baseQuiz, id: 5, completedAt: '2026-01-01T00:00:00.000Z' };
+        const newer = { ...baseQuiz, id: 5, completedAt: '2026-03-01T00:00:00.000Z' };
+
+        const groups = groupHistoryByQuiz([older, newer]);
+
+        expect(groups[0].attempts).toEqual([newer, older]);
+    });
+
+    test('orders groups by their most recent attempt, most-recent-first', () => {
+        const recentlyRetaken = { ...baseQuiz, id: 1, title: 'Recently retaken', completedAt: '2026-03-01T00:00:00.000Z' };
+        const takenLongAgo = { ...baseQuiz, id: 2, title: 'Taken long ago', completedAt: '2026-01-01T00:00:00.000Z' };
+
+        const groups = groupHistoryByQuiz([takenLongAgo, recentlyRetaken]);
+
+        expect(groups.map((group) => group.title)).toEqual(['Recently retaken', 'Taken long ago']);
+    });
+
+    test('returns an empty array for an empty input', () => {
+        expect(groupHistoryByQuiz([])).toEqual([]);
     });
 });
 

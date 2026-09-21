@@ -29,6 +29,17 @@ const historyQuiz: Quiz = {
     ]
 };
 
+// A second, more recent attempt of the *same* quiz (id 1) — the case
+// groupHistoryByQuiz exists for: a quiz reopened and retaken shows up as a
+// second flat entry from the API, and must land inside the same accordion
+// rather than as a separate, indistinguishable card.
+const retakeAttempt: Quiz = {
+    ...historyQuiz,
+    completedAt: '2026-02-01T12:00:00.000Z',
+    score: 4,
+    duration: 50
+};
+
 afterEach(() => {
     jest.clearAllMocks();
     useAuthStore.setState({ user: null, token: null, isHydrating: false });
@@ -90,26 +101,71 @@ describe('HistoryScreen', () => {
         expect(screen.getByTestId('history-empty')).toBeTruthy();
     });
 
-    test('renders a card per completed quiz with score, percentage and duration', async () => {
+    test('renders a collapsed accordion header per quiz with title and attempt summary', async () => {
         useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz] });
 
         await render(<HistoryScreen />);
 
         expect(screen.getByText('General Knowledge')).toBeTruthy();
+        expect(screen.getByText('1 attempt · Latest Score: 3 / 4 (75.0%)')).toBeTruthy();
+        // Attempt detail (date/score/duration rows) isn't shown until expanded.
+        expect(screen.queryByTestId('history-item')).toBeNull();
+    });
+
+    test('expands to show attempt date, score, and duration when the header is pressed', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz] });
+        const user = userEvent.setup();
+        await render(<HistoryScreen />);
+
+        await user.press(screen.getByTestId('history-group-1-header'));
+
         expect(screen.getByText('Score: 3 / 4 (75.0%)')).toBeTruthy();
         expect(screen.getByText('Time taken: 1m 35s')).toBeTruthy();
     });
 
-    test('groups each card into a single accessibility announcement for screen readers', async () => {
+    test('collapses again when the header is pressed a second time', async () => {
         useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz] });
+        const user = userEvent.setup();
+        await render(<HistoryScreen />);
+        const header = screen.getByTestId('history-group-1-header');
 
+        await user.press(header);
+        expect(screen.getByTestId('history-item')).toBeTruthy();
+
+        await user.press(header);
+        expect(screen.queryByTestId('history-item')).toBeNull();
+    });
+
+    test('groups each attempt into a single accessibility announcement for screen readers', async () => {
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz] });
+        const user = userEvent.setup();
         await render(<HistoryScreen />);
 
-        const card = screen.getByTestId('history-item');
-        expect(card.props.accessible).toBe(true);
-        expect(card.props.accessibilityLabel).toContain('General Knowledge');
-        expect(card.props.accessibilityLabel).toContain('Score: 3 / 4 (75.0%)');
-        expect(card.props.accessibilityLabel).toContain('Time taken: 1m 35s');
+        await user.press(screen.getByTestId('history-group-1-header'));
+
+        const attemptRow = screen.getByTestId('history-item');
+        expect(attemptRow.props.accessible).toBe(true);
+        expect(attemptRow.props.accessibilityLabel).toContain('Score: 3 / 4 (75.0%)');
+        expect(attemptRow.props.accessibilityLabel).toContain('Time taken: 1m 35s');
+    });
+
+    test('groups multiple attempts of the same quiz under one accordion, most recent first', async () => {
+        // historyQuiz (Jan, score 3/4) and retakeAttempt (Feb, score 4/4) share
+        // id 1 — the API returns them as two flat entries.
+        useQuizHistoryMock.mockReturnValue({ isPending: false, isError: false, data: [historyQuiz, retakeAttempt] });
+        const user = userEvent.setup();
+        await render(<HistoryScreen />);
+
+        // One accordion, not two — and the header summarizes the latest attempt.
+        expect(screen.getAllByText('General Knowledge')).toHaveLength(1);
+        expect(screen.getByText('2 attempts · Latest Score: 4 / 4 (100.0%)')).toBeTruthy();
+
+        await user.press(screen.getByTestId('history-group-1-header'));
+
+        const attemptRows = screen.getAllByTestId('history-item');
+        expect(attemptRows).toHaveLength(2);
+        expect(attemptRows[0].props.accessibilityLabel).toContain('Score: 4 / 4 (100.0%)'); // Feb, most recent
+        expect(attemptRows[1].props.accessibilityLabel).toContain('Score: 3 / 4 (75.0%)'); // Jan
     });
 
     test('passes the logged-in username to useQuizHistory', async () => {

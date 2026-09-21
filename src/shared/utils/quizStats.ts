@@ -34,6 +34,49 @@ export function latestAttemptFor(quizzes: Quiz[], quizId: number): Quiz | undefi
     return attempts.length > 0 ? mostRecent(attempts) : undefined;
 }
 
+/** One quiz's worth of history entries, grouped for the accordion in HistoryScreen. */
+export interface QuizHistoryGroup {
+    id: number;
+    title: string;
+    /** Every completed attempt of this quiz, sorted most-recent-first. */
+    attempts: Quiz[];
+}
+
+function attemptTime(quiz: Quiz): number {
+    return quiz.completedAt ? new Date(quiz.completedAt).getTime() : 0;
+}
+
+/**
+ * Groups a flat history list (GET /api/quiz/history/:username returns one
+ * entry per completed attempt — see HistoryScreen) by quiz id, since a quiz
+ * can have more than one attempt once it's been reopened and retaken (same
+ * fact `latestAttemptFor` above exists for). Attempts within a group are
+ * sorted most-recent-first; groups themselves are ordered by their most
+ * recent attempt, so a quiz just retaken bubbles to the top of the list.
+ *
+ * Order of first-seen attempts within `quizzes` doesn't matter — grouping
+ * is by id, not position, and both group and attempt order are re-derived
+ * from `completedAt` regardless of input order.
+ */
+export function groupHistoryByQuiz(quizzes: Quiz[]): QuizHistoryGroup[] {
+    const groups = new Map<number, QuizHistoryGroup>();
+
+    for (const quiz of quizzes) {
+        const existing = groups.get(quiz.id);
+        if (existing) {
+            existing.attempts.push(quiz);
+        } else {
+            groups.set(quiz.id, { id: quiz.id, title: quiz.title, attempts: [quiz] });
+        }
+    }
+
+    const result = Array.from(groups.values());
+    result.forEach((group) => group.attempts.sort((a, b) => attemptTime(b) - attemptTime(a)));
+    result.sort((a, b) => attemptTime(b.attempts[0]) - attemptTime(a.attempts[0]));
+
+    return result;
+}
+
 /** Locale date + time string, e.g. "1/1/2026, 12:00:00 AM". */
 export function formatCompletedAt(date: Quiz['completedAt']): string {
     if (!date) {
