@@ -154,4 +154,37 @@ describe('QuizListScreen', () => {
 
         expect(screen.queryByTestId('quiz-list-item-5-status')).toBeNull();
     });
+
+    describe('pull-to-refresh', () => {
+        test('triggers a refetch when the list is pulled to refresh', async () => {
+            const refetch = jest.fn();
+            useQuizzesMock.mockReturnValue({
+                isPending: false,
+                isError: false,
+                isRefetching: false,
+                refetch,
+                data: [{ id: 1, title: 'General Knowledge', taken: false, locked: false }]
+            });
+
+            await renderScreen();
+            const { onRefresh } = screen.getByTestId('quiz-list-refresh-control').props;
+            onRefresh();
+
+            expect(refetch).toHaveBeenCalledTimes(1);
+        });
+
+        test('reflects isRefetching on the refresh control', async () => {
+            useQuizzesMock.mockReturnValue({
+                isPending: false,
+                isError: false,
+                isRefetching: true,
+                refetch: jest.fn(),
+                data: [{ id: 1, title: 'General Knowledge', taken: false, locked: false }]
+            });
+
+            await renderScreen();
+
+            expect(screen.getByTestId('quiz-list-refresh-control').props.refreshing).toBe(true);
+        });
+    });
 });

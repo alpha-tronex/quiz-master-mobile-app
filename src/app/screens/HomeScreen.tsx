@@ -39,6 +39,18 @@ export function HomeScreen() {
 
     const title = 'Welcome to Quiz Master';
     const subtitle = fname ? `Hello, ${fname}!` : null;
+    // Rendered from both the empty-state and populated-state returns below,
+    // so a brand-new student (zero history — the exact case where "which
+    // cohort/quiz set am I in" matters most) sees it too, not just returning
+    // students with stats to show.
+    const cohortBadge = cohortName ? (
+        <Badge
+            label={`Cohort: ${cohortName}`}
+            variant="info"
+            testID="home-cohort-badge"
+            style={styles.cohortBadge}
+        />
+    ) : null;
 
     if (historyQuery.isPending) {
         return (
@@ -71,6 +83,7 @@ export function HomeScreen() {
                     <View style={styles.header}>
                         <Text style={styles.title} accessibilityRole="header">{title}</Text>
                         {subtitle ? <Text style={styles.subtitle} testID="home-subtitle">{subtitle}</Text> : null}
+                        {cohortBadge}
                     </View>
                     <EmptyState message="Pick a quiz from the Quizzes tab to get started." testID="home-empty" />
                 </View>
@@ -92,14 +105,7 @@ export function HomeScreen() {
                 <View style={styles.header}>
                     <Text style={styles.title} accessibilityRole="header">{title}</Text>
                     {subtitle ? <Text style={styles.subtitle} testID="home-subtitle">{subtitle}</Text> : null}
-                    {cohortName ? (
-                        <Badge
-                            label={`Cohort: ${cohortName}`}
-                            variant="info"
-                            testID="home-cohort-badge"
-                            style={styles.cohortBadge}
-                        />
-                    ) : null}
+                    {cohortBadge}
                 </View>
 
                 <Card

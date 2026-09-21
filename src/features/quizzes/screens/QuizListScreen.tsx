@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Badge, Card, EmptyState, ErrorState, LoadingState } from '../../../shared/components';
@@ -60,6 +60,14 @@ export function QuizListScreen({ navigation }: Props) {
                     data={quizzesQuery.data}
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.listContent}
+                    refreshControl={
+                        <RefreshControl
+                            testID="quiz-list-refresh-control"
+                            refreshing={quizzesQuery.isRefetching}
+                            onRefresh={() => quizzesQuery.refetch()}
+                            tintColor={colors.primary}
+                        />
+                    }
                     renderItem={({ item }) => {
                         const label = statusLabel(item);
                         return (
