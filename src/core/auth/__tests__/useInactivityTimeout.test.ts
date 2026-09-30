@@ -77,7 +77,7 @@ describe('useInactivityTimeout', () => {
         const { result, rerender } = await renderHook(() => useInactivityTimeout());
 
         await useAuthStore.getState().clearSession();
-        rerender({});
+        await rerender({});
         result.current.notifyActivity();
         jest.advanceTimersByTime(INACTIVITY_TIMEOUT_MS);
 
@@ -88,7 +88,7 @@ describe('useInactivityTimeout', () => {
         await useAuthStore.getState().setSession(testUser, 'jwt-abc');
         const { unmount } = await renderHook(() => useInactivityTimeout());
 
-        unmount();
+        await unmount();
         // Manually reinstate a session after unmount — if the old timer
         // weren't cleared, it would incorrectly clear this new one too.
         await useAuthStore.getState().setSession(testUser, 'jwt-def');

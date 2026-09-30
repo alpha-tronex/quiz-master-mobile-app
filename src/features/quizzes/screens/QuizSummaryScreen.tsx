@@ -90,7 +90,7 @@ export function QuizSummaryScreen({ route, navigation }: Props) {
 
                 {locked ? (
                     <Text style={styles.lockedNote} testID="quiz-summary-locked-note">
-                        This quiz is locked. Ask your instructor to reopen it if you'd like to retake it.
+                        This quiz is locked. Ask your instructor to reopen it if you&apos;d like to retake it.
                     </Text>
                 ) : (
                     <Button

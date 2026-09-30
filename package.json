@@ -41,7 +41,8 @@
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "audit:testability": "bash scripts/testability-audit.sh"
   },
   "private": true,
   "jest": {
@@ -52,6 +53,7 @@
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",
       "!src/**/*.d.ts"
-    ]
+    ],
+    "testTimeout": 20000
   }
 }

@@ -63,9 +63,46 @@ Incremental delivery, each phase producing something runnable/testable rather th
 
 *Exit criteria: app is live/available to real users on both platforms.*
 
-See `RELEASE.md` for the step-by-step runbook (manual, EAS-CLI-driven — no
-CI/CD — matching the pattern used for this developer's other shipped Expo
-app).
+**Status (as of 2026-09-24): iOS in progress, Android not started.** An EAS
+production build has been completed, submitted to TestFlight, and then
+submitted to App Store Connect for review — the app is currently in Apple's
+review queue (Primary Category: Education, Secondary: Utilities), not yet
+approved/live. No Android/Play Console work has happened yet — that half of
+this phase's exit criteria is still ahead. See `RELEASE.md` for the
+step-by-step runbook (manual, EAS-CLI-driven — no CI/CD — matching the
+pattern used for this developer's other shipped Expo app) and current
+submission details.
+
+## Phase 7 — Post-v1 additions (shipped, not in the original plan)
+
+Work that landed after the phases above, driven by real usage rather than
+the original roadmap. Each of these touched both `quizzes` (backend) and
+this repo unless noted:
+
+- **Cohort-based quiz access.** A `Cohort` model plus admin CRUD (web-only)
+  scopes which quizzes a student sees to their cohort, enforced server-side;
+  accounts with no cohort (including store reviewers) fall back to a seeded
+  "Guest" cohort. The mobile app surfaces the current cohort as a read-only
+  `Badge` on `HomeScreen` — see `MOBILE_APP_ARCHITECTURE.md`.
+- **Quiz lock/reopen.** A quiz can only be taken once by default; an admin
+  can grant a one-time reopen (web-only admin action) that's consumed on the
+  next attempt. The mobile app reflects `taken`/`locked` state on
+  `QuizListScreen` and adds a `QuizSummaryScreen` for reviewing/retaking an
+  already-taken quiz.
+- **Server-side authoritative scoring.** `POST /api/quiz` no longer trusts a
+  client-submitted score; the backend recomputes it from the canonical quiz.
+  A historical regrade/backfill script corrected pre-existing attempts.
+- **Accordion-grouped quiz history.** `HistoryScreen` groups multiple
+  attempts of the same quiz (possible once reopen/retake exists) under a
+  single collapsible row instead of a flat list.
+- **Foreground refresh.** `AppState` is wired to TanStack Query's
+  `focusManager` so screens kept mounted by the tab navigator refetch on
+  app foreground, not just remount; `QuizListScreen` also got manual
+  pull-to-refresh.
+- **Answer-index bug fix (both clients).** A 1-based/0-based mismatch in how
+  selected answers were compared against the server's `correct` indices
+  could mark correctly-answered questions wrong; fixed in both the Angular
+  web app and this mobile app.
 
 ## Sequencing notes
 - Phase 0 blocks everything else that touches quiz storage or auth — do it first, not in parallel.

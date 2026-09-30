@@ -167,7 +167,9 @@ describe('QuizListScreen', () => {
             });
 
             await renderScreen();
-            const { onRefresh } = screen.getByTestId('quiz-list-refresh-control').props;
+            // RefreshControl's own testID doesn't survive into the jest-expo
+            // host tree, so reach it through the FlatList's refreshControl prop.
+            const { onRefresh } = screen.getByTestId('quiz-list').props.refreshControl.props;
             onRefresh();
 
             expect(refetch).toHaveBeenCalledTimes(1);
@@ -184,7 +186,7 @@ describe('QuizListScreen', () => {
 
             await renderScreen();
 
-            expect(screen.getByTestId('quiz-list-refresh-control').props.refreshing).toBe(true);
+            expect(screen.getByTestId('quiz-list').props.refreshControl.props.refreshing).toBe(true);
         });
     });
 });

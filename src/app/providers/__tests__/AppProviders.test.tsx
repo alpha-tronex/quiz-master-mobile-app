@@ -24,7 +24,7 @@ describe('AppProviders', () => {
         jest.spyOn(AppState, 'addEventListener').mockReturnValue({ remove: removeSpy } as unknown as ReturnType<typeof AppState.addEventListener>);
 
         const { unmount } = await render(<AppProviders>{null}</AppProviders>);
-        unmount();
+        await unmount();
 
         expect(removeSpy).toHaveBeenCalledTimes(1);
     });

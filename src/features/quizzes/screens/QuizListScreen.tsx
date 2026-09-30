@@ -57,12 +57,15 @@ export function QuizListScreen({ navigation }: Props) {
                 <EmptyState message="No quizzes are available right now." testID="quiz-list-empty" />
             ) : (
                 <FlatList
+                    // testID lives on the list, not the RefreshControl: the
+                    // jest-expo host tree drops RefreshControl's testID, so
+                    // tests read `refreshControl.props` off this element.
+                    testID="quiz-list"
                     data={quizzesQuery.data}
                     keyExtractor={(item) => String(item.id)}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
                         <RefreshControl
-                            testID="quiz-list-refresh-control"
                             refreshing={quizzesQuery.isRefetching}
                             onRefresh={() => quizzesQuery.refetch()}
                             tintColor={colors.primary}

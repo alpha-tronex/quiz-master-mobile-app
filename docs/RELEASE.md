@@ -6,6 +6,29 @@ Fastlane, no automated release pipeline: a person runs each command and
 watches the result before moving to the next step. Covers `PHASED_DELIVERY.md`
 Phase 6: regression pass, TestFlight/Play internal testing, staged rollout.
 
+## Current status (as of 2026-09-29)
+
+- **iOS:** Apple rejected the prior submission under **Guideline 5.1.1(v)**
+  — an app with in-app account creation must also support in-app account
+  deletion, not just deactivation or a customer-service request. Fixed:
+  every user now has a "Delete my account" button on the Account screen
+  (irreversible self-service hard-delete via `DELETE /api/account` — see
+  `docs/MOBILE_APP_ARCHITECTURE.md`'s "Account deletion" section and
+  `docs/BACKEND.md`'s "Account deletion & archival" entry). A **new** build
+  incorporating this fix needs to go through `eas build` → TestFlight →
+  resubmission (see "Every release" below); the previous rejected build is
+  not resubmittable as-is. `eas.json`'s `submit.production.ios.ascAppId` is
+  set to `6812153773` (this app's real App Store Connect ID, not a
+  placeholder).
+- **Store category:** Primary = **Education**, Secondary = **Utilities**, set
+  in the App Store Connect listing (not in `app.json`/`eas.json` — Apple's
+  category fields live only in App Store Connect).
+- **Android:** no Play Console submission has happened yet. The Android
+  build/submit steps below are still the plan, not something that's shipped.
+- **Privacy policy:** hosted directly by the backend — see "Privacy policy
+  URL" below; this superseded an earlier plan to host it as a static page via
+  `hetzner-infra`.
+
 ## Backend
 
 `EXPO_PUBLIC_API_URL` is set to `https://quizmaster.alphatronex.com` for the
@@ -13,9 +36,9 @@ Phase 6: regression pass, TestFlight/Play internal testing, staged rollout.
 (the Hetzner migration documented in `quizzes/DEPLOY.md` has gone out; the
 domain serves the app and the `quizmaster-app`/`quizmaster-mongo` containers
 are listed as live in `hetzner-infra/hetzner.md`). `JWT_SECRET` lives in
-`server/.env.production` on the box (git-ignored) per Phase 0 — the server
-serving traffic at all confirms it's set, since Phase 0 removed the
-no-secret startup fallback.
+`server/.env.production` on the box (git-ignored) — see `docs/BACKEND.md`
+item 1: the server serving traffic at all confirms it's set, since the
+hardcoded fallback was removed and the server now refuses to start without it.
 
 The `development` profile intentionally has no `env` override: dev-client
 builds still run their JS through Metro, so `EXPO_PUBLIC_API_URL` there
@@ -49,28 +72,28 @@ public release:
 
 1. **Apple Developer Program** account, and an App Store Connect app record
    for bundle ID `com.alphatronex.quizmaster` (matches `ios.bundleIdentifier`
-   in `app.json`). Note the app's App Store Connect ID (a numeric string,
-   e.g. `6785599159` for the reference app) — add it to `eas.json` as
-   `submit.production.ios.ascAppId` once known.
+   in `app.json`). **Done** — the app's App Store Connect ID is `6812153773`,
+   already set in `eas.json` as `submit.production.ios.ascAppId`. Listing
+   name is "Quiz Master by Alphatronex" (plain "Quiz Master" was taken);
+   `app.json`'s internal `expo.name` stays "Quiz Master". Category: Primary
+   Education, Secondary Utilities.
 2. **Google Play Console** developer account, and an app listing for package
    `com.alphatronex.quizmaster` (matches `android.package` in `app.json`).
-   No `submit` block is used for Android here, same as the reference app —
-   `.aab` uploads go through the Play Console UI by hand.
-3. Store listing content lives in `store-assets/` (`store-copy.md`,
-   `privacy-policy.md`) — fill in real screenshots/assets there before
-   submitting either listing (content is drafted; screenshots still needed
-   from a real build).
-4. The privacy policy needs to be hosted at a public URL (both stores
-   require this) before submission. A styled HTML version lives at
-   `hetzner-infra/splash/quizmaster-privacy.html` (source of truth is
-   `store-assets/privacy-policy.md` — keep them in sync). Deploy it with:
-   ```bash
-   rsync -a splash/ hetzner:/var/www/alphatronex/
-   ```
-   from the `hetzner-infra` repo — it'll be live at
-   `https://alphatronex.com/quizmaster-privacy.html`. Use that URL in both
-   App Store Connect's "Privacy Policy URL" field and the Play Console's
-   Data Safety / App content section.
+   **Not started yet.** No `submit` block is used for Android here, same as
+   the reference app — `.aab` uploads go through the Play Console UI by hand.
+3. Store listing content lives in `store-assets/` (`store-copy.md`) — the
+   iOS submission's screenshots and required fields have since been filled
+   in via App Store Connect directly; `store-assets/` still needs a pass to
+   reflect that before it's used again for the Android listing.
+4. **Privacy policy.** The backend now serves this itself: `server/app.js`
+   registers `GET /privacy`, which serves `server/public/privacy.html` as a
+   static page (registered before the Angular catch-all route so it isn't
+   swallowed by it) — live at `https://quizmaster.alphatronex.com/privacy`.
+   Use that URL in both App Store Connect's "Privacy Policy URL" field and
+   the Play Console's Data Safety / App content section. (An earlier plan to
+   host a separate static page via `hetzner-infra/splash/` and rsync was
+   superseded by this — the backend-served route is simpler to keep in sync
+   since it deploys with the rest of the API.)
 
 ## Every release
 
@@ -109,6 +132,27 @@ Add internal testers in App Store Connect once the build finishes processing.
 Download the `.aab` from the `eas build` output and upload it manually
 through the Play Console's Internal testing track — no `eas submit` config
 for Android, matching the reference app.
+
+### 3a. Submit to App Store review
+
+Once a TestFlight build has been sanity-checked, promote it to a full App
+Store Connect submission from the App Store Connect UI (version metadata,
+screenshots, "What's New" notes, App Review Information). No `eas` command
+for this step — it's done in App Store Connect directly, same as the
+category (Primary: Education, Secondary: Utilities) and Privacy Policy URL
+fields (see setup step 4 above).
+
+**Demo/test account for App Review.** No demo or reviewer login credentials
+are committed anywhere in this repo or the `quizzes` repo (searched for
+`appletest`, `demo account`, `test account` — the only hits are an unrelated
+stress-test cleanup script and a DEPLOY.md note about registering a fresh
+test account manually to verify cohort assignment, not App Review
+credentials). If App Review needs a working login, either register a real
+account on `https://quizmaster.alphatronex.com` and enter those credentials
+in App Store Connect's "App Review Information → Sign-in required" fields,
+or note in that field that no login is required to evaluate the app's core
+flow (registration is self-service). Whatever was actually entered lives
+only in App Store Connect, not in this repo.
 
 ### 4. Staged rollout
 

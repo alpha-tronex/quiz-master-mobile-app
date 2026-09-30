@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Banner, Button, Select, TextField } from '../../../shared/components';
 import { colors, spacing, typography } from '../../../shared/theme';
 import { validateForm, fieldErrorMap } from '../../../shared/validation';
 import { useAuthStore } from '../../../core/auth/authStore';
 import { useUpdateAccount } from '../hooks/useUpdateAccount';
+import { useDeleteAccount } from '../hooks/useDeleteAccount';
 import { useStates } from '../hooks/useStates';
 import { useCountries } from '../hooks/useCountries';
 import type { Address } from '../../../shared/types';
@@ -52,6 +53,7 @@ export function AccountScreen() {
     const user = useAuthStore((state) => state.user);
     const clearSession = useAuthStore((state) => state.clearSession);
     const updateAccount = useUpdateAccount();
+    const deleteAccount = useDeleteAccount();
     const statesQuery = useStates();
     const countriesQuery = useCountries();
 
@@ -109,6 +111,27 @@ export function AccountScreen() {
         );
     }
 
+    /**
+     * `DELETE /api/account` — irreversible (App Store Guideline 5.1.1(v)),
+     * so this is gated behind a native confirm dialog rather than firing on
+     * a single tap, matching how every other destructive-and-permanent
+     * action in this app (and its web counterpart) requires a confirm step.
+     */
+    function handleDeleteAccount() {
+        Alert.alert(
+            'Delete account?',
+            'This permanently deletes your account and all of your quiz history. This cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => deleteAccount.mutate()
+                }
+            ]
+        );
+    }
+
     if (!user) {
         return null;
     }
@@ -123,6 +146,13 @@ export function AccountScreen() {
                 ) : null}
                 {justSaved ? (
                     <Banner message="Account updated" variant="success" testID="account-success-banner" />
+                ) : null}
+                {deleteAccount.isError ? (
+                    <Banner
+                        message={deleteAccount.error.message}
+                        variant="error"
+                        testID="account-delete-error-banner"
+                    />
                 ) : null}
 
                 <TextField
@@ -242,6 +272,16 @@ export function AccountScreen() {
                     }}
                     style={styles.logoutButton}
                 />
+
+                <Text style={styles.sectionTitle} accessibilityRole="header">Danger zone</Text>
+                <Button
+                    testID="account-delete-button"
+                    label="Delete my account"
+                    variant="danger"
+                    onPress={handleDeleteAccount}
+                    loading={deleteAccount.isPending}
+                    style={styles.deleteButton}
+                />
             </ScrollView>
         </SafeAreaView>
     );
@@ -277,7 +317,9 @@ const styles = StyleSheet.create({
         marginTop: spacing.md
     },
     logoutButton: {
-        marginTop: spacing.md,
+        marginTop: spacing.md
+    },
+    deleteButton: {
         marginBottom: spacing.xl
     }
 });

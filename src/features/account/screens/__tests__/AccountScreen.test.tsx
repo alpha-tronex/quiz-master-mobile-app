@@ -1,21 +1,26 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, screen, userEvent } from '@testing-library/react-native';
 import { AccountScreen } from '../AccountScreen';
 import { useUpdateAccount } from '../../hooks/useUpdateAccount';
+import { useDeleteAccount } from '../../hooks/useDeleteAccount';
 import { useStates } from '../../hooks/useStates';
 import { useCountries } from '../../hooks/useCountries';
 import { useAuthStore } from '../../../../core/auth/authStore';
 import type { User } from '../../../../shared/types';
 
 jest.mock('../../hooks/useUpdateAccount', () => ({ useUpdateAccount: jest.fn() }));
+jest.mock('../../hooks/useDeleteAccount', () => ({ useDeleteAccount: jest.fn() }));
 jest.mock('../../hooks/useStates', () => ({ useStates: jest.fn() }));
 jest.mock('../../hooks/useCountries', () => ({ useCountries: jest.fn() }));
 
 const useUpdateAccountMock = useUpdateAccount as jest.Mock;
+const useDeleteAccountMock = useDeleteAccount as jest.Mock;
 const useStatesMock = useStates as jest.Mock;
 const useCountriesMock = useCountries as jest.Mock;
 
 const updateAccountMutate = jest.fn();
+const deleteAccountMutate = jest.fn();
 
 const testUser: User = {
     id: 'u1',
@@ -45,6 +50,7 @@ const countries = [{ code: 'US', name: 'United States' }];
 
 beforeEach(() => {
     useUpdateAccountMock.mockReturnValue({ mutate: updateAccountMutate, isPending: false, isError: false });
+    useDeleteAccountMock.mockReturnValue({ mutate: deleteAccountMutate, isPending: false, isError: false });
     useStatesMock.mockReturnValue({ data: states });
     useCountriesMock.mockReturnValue({ data: countries });
     useAuthStore.setState({ user: testUser, token: 'jwt-abc', isHydrating: false });
@@ -146,5 +152,45 @@ describe('AccountScreen', () => {
 
         expect(useAuthStore.getState().token).toBeNull();
         expect(useAuthStore.getState().user).toBeNull();
+    });
+
+    describe('Delete my account', () => {
+        test('pressing the button shows a confirm dialog and does not delete until confirmed', async () => {
+            const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+            const user = userEvent.setup();
+            await render(<AccountScreen />);
+
+            await user.press(screen.getByTestId('account-delete-button'));
+
+            expect(alertSpy).toHaveBeenCalledTimes(1);
+            expect(deleteAccountMutate).not.toHaveBeenCalled();
+            alertSpy.mockRestore();
+        });
+
+        test('confirming the dialog calls the delete mutation', async () => {
+            jest.spyOn(Alert, 'alert').mockImplementation((_title, _message, buttons) => {
+                const confirmButton = buttons?.find((button) => button.text === 'Delete');
+                confirmButton?.onPress?.();
+            });
+            const user = userEvent.setup();
+            await render(<AccountScreen />);
+
+            await user.press(screen.getByTestId('account-delete-button'));
+
+            expect(deleteAccountMutate).toHaveBeenCalledTimes(1);
+        });
+
+        test('shows the server error message when deletion fails', async () => {
+            useDeleteAccountMock.mockReturnValue({
+                mutate: deleteAccountMutate,
+                isPending: false,
+                isError: true,
+                error: { message: 'Delete failed' }
+            });
+            await render(<AccountScreen />);
+
+            const errorBanner = screen.getByTestId('account-delete-error-banner');
+            expect(errorBanner).toHaveTextContent('Delete failed');
+        });
     });
 });
