@@ -4,10 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ['v*']
+  workflow_dispatch: {}
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -59,3 +61,48 @@ jobs:
         run: |
           set -o pipefail
           bash scripts/testability-audit.sh | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # Only runs on a release tag (`git tag v1.2.3 && git push --tags`), never
+  # on every push to main — store builds are slow, cost build credits, and
+  # go through Apple review, so they're opt-in per release, not automatic.
+  deploy:
+    name: EAS build + submit to TestFlight
+    needs: checks
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "::error::Missing required secret EXPO_TOKEN — create one at expo.dev -> Account settings -> Access tokens, then add it under Settings -> Secrets and variables -> Actions"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.8.0
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # --no-wait: the job ends once EAS has queued the build; --auto-submit
+      # sends the finished build straight to TestFlight (ascAppId is already
+      # set in eas.json, so no App Store Connect API key is needed here).
+      # Track progress with `eas build:list` locally, or the Actions step
+      # summary link EAS prints.
+      - name: Build (production) and submit to TestFlight
+        run: |
+          eas build --platform ios --profile production --non-interactive --auto-submit --no-wait \
+            | tee -a "$GITHUB_STEP_SUMMARY"
