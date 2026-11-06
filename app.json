@@ -36,7 +36,8 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "./plugins/withQuotedBundlePhase.js"
+      "./plugins/withQuotedBundlePhase.js",
+      "expo-font"
     ],
     "extra": {
       "eas": {
